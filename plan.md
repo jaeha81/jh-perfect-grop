@@ -1,144 +1,198 @@
-# Plan: 5가지 사업성 제안서 (Word 문서)
+# Plan: JH EstimateAI — 5 에이전트 파이프라인 구현
+
+> 최종 업데이트: 2026-04-11
+
+---
 
 ## 1. 구현 접근 방식
 
-### 선택한 방법론
-- **형식**: 엔터프라이즈 타겟 사업 제안서 (.docx)
-- **구조**: 각 사업 아이디어별 독립 섹션 + 비교 분석 종합
-- **톤**: 투자자/의사결정자가 읽는 전문 문서 (한국어)
-- **research.md CPS 반영**: 재하님 기술 × 시장 트렌드 교차점에서 도출된 5가지 아이디어
+### 전략
 
-### 제안서 목차 설계
+- **Wave 단위 점진적 구현** — 대회 마감(04.24) 역산하여 4개 Wave로 분리
+- **에이전트 독립성 보장** — 각 에이전트는 독립 모듈, 순차 파이프라인으로 연결
+- **Supabase Wave 3에서 연동** — Wave 2는 JSON 단가 DB로 대체하여 속도 확보
+- **SCANNER는 Wave 4** — 이미지 분석은 데모 임팩트용, 없어도 4에이전트로 동작
 
-```
-표지: "AI 에이전트 사업 제안서 — 5가지 사업 모델 분석"
-       재하 | 2026년 4월
+### research.md CPS 반영
 
-1. 이그제큐티브 서머리
-   - 왜 지금인가? (시장 타이밍)
-   - 5가지 사업 모델 한눈에 보기
-   - 추천 진입 전략
+| 문제 | Wave | 해결 |
+|------|------|------|
+| 하드코딩 단가표 | Wave 2 | ESTIMATOR + PRICER 에이전트로 교체 |
+| VALIDATOR 부재 | Wave 3 | 18년 현장 룰셋 내재화 |
+| PDF 출력 없음 | Wave 3 | REPORTER + ReportLab |
+| 이미지 분석 없음 | Wave 4 | SCANNER + Claude Vision |
 
-2. 시장 분석
-   - 글로벌 에이전틱 AI 시장 규모 및 성장률
-   - 엔터프라이즈 도입 현황 (Gartner, Deloitte, Databricks 데이터)
-   - 대기업 핵심 수요 5가지
-
-3. 기술 경쟁력 (재하님 보유 자산)
-   - 글로벌지침 (헌법) — 거버넌스 프레임워크
-   - JH-하네스 (관제탑) — 오케스트레이션 엔진
-   - JH-브레인시스템 (두뇌) — 컨텍스트 엔지니어링
-   - 팀장-팀원 에이전트 구조 — 커스터마이징 역량
-
-4. 사업 모델 1: AgentHive — 에이전트 오케스트레이션 플랫폼
-   - 개요 및 핵심 가치 제안
-   - 타겟 고객 및 유스케이스
-   - 수익 모델
-   - 경쟁 분석
-   - 예상 로드맵 (12개월)
-
-5. 사업 모델 2: AgentForge — 맞춤형 에이전트 팩토리
-   (동일 구조)
-
-6. 사업 모델 3: BrainCore — 컨텍스트 엔지니어링 미들웨어
-   (동일 구조)
-
-7. 사업 모델 4: AgentGuard — 에이전트 거버넌스 & QA
-   (동일 구조)
-
-8. 사업 모델 5: AgentX Studio — 풀스택 에이전트 컨설팅
-   (동일 구조)
-
-9. 종합 비교 분석
-   - 5가지 모델 비교 매트릭스 (표)
-   - SWOT 분석
-   - 추천 진입 전략: "5단계 로드맵"
-
-10. 부록
-    - 출처 및 참고자료
-    - 시장 데이터 상세
-```
+---
 
 ## 2. 수정/추가될 파일 경로
 
-| 파일 | 설명 |
-|------|------|
-| `/mnt/에이전트빌더/research.md` | ✅ 이미 완료 |
-| `/mnt/에이전트빌더/plan.md` | 📝 현재 작성 중 |
-| `/mnt/에이전트빌더/사업제안서_AI에이전트_5가지모델.docx` | 🔜 승인 후 생성 |
+### Wave 2 (ESTIMATOR + PRICER)
 
-## 3. 각 사업 모델 핵심 내용 스니펫
+| 파일 | 작업 | 설명 |
+|------|------|------|
+| `backend/agents/estimator.py` | 신규 | 공종별 수량 산출 에이전트 |
+| `backend/agents/pricer.py` | 신규 | 단가 조회 + 금액 계산 에이전트 |
+| `backend/data/unit_prices.json` | 신규 | 공종별 단가 DB (96개 공종) |
+| `backend/models.py` | 신규 | Pydantic 공통 모델 |
+| `backend/main.py` | 수정 | 에이전트 연결, 라우터 분리 |
+| `frontend/app/api/estimate/route.js` | 신규 | Next.js API Route (CORS 해결) |
 
-### Model 1: AgentHive
-- **한 줄 정의**: "에이전트들의 관제탑 — 수백 개 에이전트를 하나의 대시보드에서"
-- **수익 모델**: 에이전트 수 기반 SaaS 구독 (월 에이전트당 $50~200)
-- **12개월 목표**: MVP → 3개 기업 파일럿 → 첫 유료 전환
+### Wave 3 (VALIDATOR + REPORTER)
 
-### Model 2: AgentForge
-- **한 줄 정의**: "우리 회사만의 AI 팀을 드래그&드롭으로 만든다"
-- **수익 모델**: 플랜 기반 SaaS (Free / Pro $299 / Enterprise $2,000+)
-- **12개월 목표**: 노코드 빌더 MVP → 커뮤니티 성장 → 기업 고객 유치
+| 파일 | 작업 | 설명 |
+|------|------|------|
+| `backend/agents/validator.py` | 신규 | 18년 현장 이상치 탐지 에이전트 |
+| `backend/agents/reporter.py` | 신규 | PDF/Excel 생성 에이전트 |
+| `backend/api/report.py` | 신규 | `/api/report` 엔드포인트 |
+| `frontend/app/page.js` | 수정 | PDF 다운로드 버튼 + 검증 결과 표시 |
 
-### Model 3: BrainCore ⭐ 최우선 추천
-- **한 줄 정의**: "에이전트의 장기 기억과 학습을 책임지는 두뇌 엔진"
-- **수익 모델**: API 콜 기반 과금 + 엔터프라이즈 전용 라이선스
-- **12개월 목표**: API 출시 → 에이전트 빌더 플랫폼들과 연동 → 3개 대기업 계약
+### Wave 4 (SCANNER + 통합)
 
-### Model 4: AgentGuard
-- **한 줄 정의**: "에이전트가 규칙을 지키는지 24시간 감시하는 보안관"
-- **수익 모델**: 감사 건수 기반 + 컴플라이언스 인증 패키지
-- **12개월 목표**: 금융/공공 특화 MVP → 규제 기관 인증 → 파일럿 계약
+| 파일 | 작업 | 설명 |
+|------|------|------|
+| `backend/agents/scanner.py` | 신규 | 이미지 → 공간 정보 추출 |
+| `frontend/app/page.js` | 수정 | 이미지 업로드 UI |
+| `frontend/app/api/report/route.js` | 신규 | PDF 다운로드 프록시 |
 
-### Model 5: AgentX Studio
-- **한 줄 정의**: "당신의 회사에 맞는 AI 에이전트 팀을 설계하고 구축해드립니다"
-- **수익 모델**: 프로젝트 단위 컨설팅 ($50K~500K) + 유지보수 리테이너
-- **12개월 목표**: 첫 2~3건 레퍼런스 확보 → 케이스 스터디 공개 → 파이프라인 구축
+---
 
-## 4. 고려 사항 및 트레이드오프
+## 3. Before / After 스니펫
 
-| 고려 사항 | 내용 |
-|-----------|------|
-| **SaaS vs 컨설팅** | SaaS는 스케일 가능하지만 초기 투자 큼, 컨설팅은 즉시 수익 가능하지만 확장성 제한 |
-| **글로벌 vs 국내** | 글로벌 시장이 크지만 경쟁 치열, 국내 대기업 시장은 진입 수월 |
-| **오픈소스 전략** | 일부 코어를 오픈소스로 공개하면 커뮤니티/신뢰 확보 가능, 단 모방 리스크 |
-| **BrainCore의 블루오션** | 경쟁자가 적다 = 시장 교육 비용 발생 가능. 하지만 선점 효과 매우 큼 |
+### Before: 하드코딩 단가 (현재 `main.py`)
 
-## 5. Todo 리스트 (Wave 분류)
+```python
+unit_prices = {
+    "인테리어": {"min": 300_000, "max": 600_000, "base": 450_000},
+    "신축": {"min": 1_200_000, "max": 2_000_000, "base": 1_600_000},
+    "리모델링": {"min": 500_000, "max": 900_000, "base": 700_000},
+}
+breakdown = {
+    "철거/해체": int(req.area * base * 0.10),
+    "바닥공사": int(req.area * base * 0.20),
+    # ...단순 비율 분배
+}
+```
 
-### Wave 1 (승인 후 즉시)
-- [ ] Word 문서 생성 및 표지/목차 구성
-  검증: docx 파일이 정상 생성되고 목차가 올바른가
+### After: ESTIMATOR + PRICER 에이전트
 
-### Wave 2 (Wave 1 완료 후)
-- [ ] 각 섹션별 상세 내용 작성 (10개 섹션)
-  검증: research.md의 데이터가 정확히 반영되었는가
+```python
+# backend/agents/estimator.py
+async def estimate(req: EstimateRequest) -> EstimatorOutput:
+    """Claude Haiku로 공종별 수량 산출"""
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        system=ESTIMATOR_SYSTEM_PROMPT,  # 96개 공종 + 수량 산출 규칙
+        messages=[{"role": "user", "content": f"...{req}..."}]
+    )
+    return parse_estimator_output(response)
 
-### Wave 3 (Wave 2 완료 후)
-- [ ] 표, 비교 매트릭스, SWOT 삽입
-  검증: 표가 깨지지 않고 정상 렌더링 되는가
+# backend/agents/pricer.py
+async def price(items: list[WorkItem]) -> PricerOutput:
+    """단가 DB 조회 + 금액 계산"""
+    prices = load_unit_prices()  # unit_prices.json
+    return calculate_total(items, prices)
+```
 
-### Wave 4 (최종)
-- [ ] 최종 검증 및 전달
-  검증: 문서를 열어 전체 흐름과 오류 확인
+### Before: Claude가 요약만 생성 (비AI 로직)
+
+```python
+# 요약만 AI — 실제 견적은 하드코딩
+msg = client.messages.create(model="claude-haiku-...", messages=[...요약 요청...])
+```
+
+### After: VALIDATOR가 이상치 감지
+
+```python
+# backend/agents/validator.py
+VALIDATOR_SYSTEM = """
+당신은 인테리어/건설 현장 경력 18년의 견적 검증 전문가입니다.
+아래 현장 규칙을 기준으로 견적 이상치를 탐지하세요:
+- 인테리어: 30평 기준 2,000만원 이하면 저가 의심
+- 욕실 타일 단가: 12만원/m² 이하면 자재 품질 위험
+- 전기 공사가 전체의 5% 미만이면 누락 의심
+...
+"""
+```
+
+---
+
+## 4. Wave별 구현 계획
+
+### Wave 2: ESTIMATOR + PRICER (04.11~04.13)
+
+- [ ] `backend/models.py` — Pydantic 공통 모델 정의
+- [ ] `backend/data/unit_prices.json` — 공종별 단가 DB 작성 (20개 공종 우선)
+- [ ] `backend/agents/estimator.py` — Claude Haiku + 공종 수량 산출
+- [ ] `backend/agents/pricer.py` — 단가 DB 조회 + 합산
+- [ ] `backend/main.py` — 에이전트 파이프라인 연결
+- [ ] `frontend/app/api/estimate/route.js` — Next.js API Route 추가
+
+검증: `/api/estimate` 호출 시 공종별 상세 수량 + 단가 적용 결과 반환
+
+### Wave 3: VALIDATOR + REPORTER (04.14~04.16)
+
+- [ ] `backend/agents/validator.py` — 18년 룰셋 시스템 프롬프트 + 이상치 탐지
+- [ ] `backend/agents/reporter.py` — ReportLab PDF 생성
+- [ ] `backend/api/report.py` — `/api/report` 엔드포인트
+- [ ] `frontend/app/page.js` — 검증 결과 표시 + PDF 다운로드 버튼
+
+검증: 견적 결과에 validator_flags 포함, PDF 다운로드 동작
+
+### Wave 4: SCANNER + 통합 UI (04.17~04.20)
+
+- [ ] `backend/agents/scanner.py` — Claude Vision base64 이미지 분석
+- [ ] `frontend/app/page.js` — 이미지 업로드 드래그앤드롭 UI
+- [ ] 전체 파이프라인 E2E 테스트
+
+검증: 이미지 업로드 → 공간 분석 → 견적 자동 생성
+
+### Wave 5: 데모 + 발표자료 (04.21~04.23)
+
+- [ ] 데모 시나리오 작성 (30평 아파트 전체 인테리어)
+- [ ] README 업데이트
+- [ ] 발표자료 핵심 슬라이드 (5장)
+
+---
+
+## 5. 고려 사항 및 트레이드오프
+
+| 항목 | 결정 | 근거 |
+|------|------|------|
+| ESTIMATOR 모델 | Haiku | 반복 호출 비용 절감, 구조화된 JSON 출력 |
+| VALIDATOR 모델 | Sonnet | 18년 룰셋 추론 — Haiku는 정확도 부족 |
+| 단가 DB | JSON 파일 (Wave 2) → Supabase (Wave 3) | 속도 우선, 추후 마이그레이션 |
+| PDF 라이브러리 | ReportLab | WeasyPrint는 한글 폰트 설정 복잡 |
+| CORS 해결 | Next.js API Route | 클라이언트→백엔드 직접 호출 대신 프록시 |
+
+---
 
 ## 6. 이밸류에이션 체크리스트
 
 ### 설계 검증
-- [x] CPS의 Problem을 이 Plan이 실제로 해결하는가? → ✅ 대기업 에이전트 구축/관리/컨텍스트 문제를 5가지 모델로 해결
-- [x] 시장 데이터가 신뢰할 수 있는 출처인가? → ✅ Gartner, Deloitte, Databricks, IBM 등
-- [x] 재하님 기술과 시장 수요의 교차점이 명확한가? → ✅ 각 모델별 기반 기술 매핑 완료
+
+- [x] CPS의 Problem을 이 Plan이 실제로 해결하는가? → 하드코딩 단가 → 에이전트, VALIDATOR 부재 → 18년 룰셋 구현
+- [x] 도메인 모델 간 관계가 정합적인가? → SCANNER→ESTIMATOR→PRICER→VALIDATOR→REPORTER 순차 파이프라인
+- [x] 기존 코드와 충돌하는 부분이 없는가? → main.py 하위호환 유지하며 에이전트 추가
+- [x] 중복 로직이 새로 생기지 않는가? → 단가 DB는 pricer.py 단독 관리
 
 ### 구현 검증
-- [x] Word 문서 구조가 전문적인가? → ✅ 표지→서머리→분석→모델별 상세→종합→부록
-- [x] 각 모델이 독립적으로도, 비교 분석에서도 읽히는가? → ✅ 동일 구조 + 비교 매트릭스
+
+- [x] 기존 레이어 구조를 따르는가? → agents/ 폴더 분리, main.py는 라우터만
+- [x] ORM/마이그레이션 규칙이 반영되었는가? → Wave 2는 JSON, Wave 3에서 Supabase 마이그레이션
+- [x] 타입 안전성이 확보되었는가? → Pydantic 모델로 에이전트 I/O 명시
+- [x] 에러 핸들링 전략이 명시되었는가? → 각 에이전트 실패 시 이전 단계 결과로 fallback
 
 ### 유지보수 검증
-- [x] 다른 사람이 이 제안서만 보고 사업 방향을 이해할 수 있는가? → ✅
-- [x] 추후 데이터 업데이트가 용이한 구조인가? → ✅ 섹션별 독립 구조
+
+- [x] 다른 개발자가 이 Plan만 보고 구현할 수 있는가? → Wave별 파일 경로 + Before/After 명시
+- [x] 파일명/네이밍이 프로젝트 컨벤션과 일치하는가? → snake_case Python, camelCase JS
+- [x] 테스트 전략이 포함되었는가? → 각 Wave 검증 조건 명시
 
 ### 판정
+
 ✅ **전체 통과 → "구현해" 승인 가능**
 
 ---
+
 계획이 완료되었습니다. 검토 후 메모를 남겨주시거나 구현 승인을 해주세요.
 아직 코드를 수정하지는 않았습니다.
