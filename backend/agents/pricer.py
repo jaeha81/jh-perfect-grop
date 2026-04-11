@@ -1,17 +1,15 @@
-"""Agent 3: PRICER — 단가 DB 조회 + 금액 산출"""
-import json
+"""Agent 3: PRICER — 단가 DB 조회 + 금액 산출 (Supabase / JSON fallback)"""
+import sys
 from pathlib import Path
 
-_PRICES: dict | None = None
+# db 모듈 경로 추가
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from db.supabase_prices import get_prices_supabase
 
 
 def _load_prices() -> dict:
-    global _PRICES
-    if _PRICES is None:
-        prices_path = Path(__file__).parent.parent / "data" / "unit_prices.json"
-        with open(prices_path, encoding="utf-8") as f:
-            _PRICES = json.load(f)
-    return _PRICES
+    return get_prices_supabase()
 
 
 # 카테고리별 fallback 기본 단가 (단가 매칭 실패 시)

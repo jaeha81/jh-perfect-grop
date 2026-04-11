@@ -1,0 +1,95 @@
+{
+  "_comment": "JH EstimateAI 데모 시나리오 — 30평(99m²) 아파트 전체 인테리어",
+  "_usage": "POST http://localhost:8000/api/estimate 에 payload 전송",
+
+  "scenario_1": {
+    "title": "표준 시나리오: 30평 아파트 전체 인테리어",
+    "description": "가장 일반적인 사례. VALIDATOR 경고 없는 정상 견적.",
+    "payload": {
+      "type": "인테리어",
+      "area": 99.0,
+      "description": "아파트 전체 인테리어. 거실·침실 강마루, 욕실 2개 타일+위생도기 전면 교체, 주방 타일+싱크대 교체, 전체 실크도배, 전기공사(콘센트·스위치·조명) 포함, 석고보드 천장, 걸레받이 몰딩."
+    },
+    "expected_range": "2,200만원 ~ 3,800만원",
+    "expected_unit_price": "220,000 ~ 385,000원/m²",
+    "demo_points": [
+      "5 에이전트 파이프라인 진행 시각화",
+      "공종별 막대 차트 (강마루·도배·전기·욕실 비중)",
+      "VALIDATOR 정상 판정 → 전문가 총평 표시",
+      "PDF 다운로드"
+    ]
+  },
+
+  "scenario_2": {
+    "title": "VALIDATOR 강조 시나리오: 저가 의심 견적",
+    "description": "의도적으로 공사 범위를 축소 → VALIDATOR가 경고/오류 탐지하는 장면 시연.",
+    "payload": {
+      "type": "인테리어",
+      "area": 99.0,
+      "description": "바닥재(강마루)만 교체. 다른 공사 없음."
+    },
+    "expected_flags": [
+      "전기공사 누락 의심 (warning)",
+      "설비 항목 누락 의심 (warning)",
+      "m² 당 단가 이상 (전체 비용 낮을 경우 error)"
+    ],
+    "demo_points": [
+      "18년 현장 경험 기반 이상치 탐지 차별화 포인트",
+      "오류/주의 플래그 색상 구분 (빨강/노랑)",
+      "제안 사항(suggestion) 자동 생성"
+    ]
+  },
+
+  "scenario_3": {
+    "title": "SCANNER 시나리오: 사진 첨부 분석",
+    "description": "공간 사진 업로드 → Claude Vision 분석 → 견적 자동 연계.",
+    "payload": {
+      "type": "리모델링",
+      "area": 99.0,
+      "description": "첨부 사진 기반으로 분석해주세요.",
+      "image_base64": "(실제 테스트 시 이미지 base64 입력)"
+    },
+    "demo_points": [
+      "드래그앤드롭 이미지 업로드",
+      "SCANNER 에이전트 활성화 (첫 번째 단계 강조)",
+      "공간 분석 결과 텍스트 표시",
+      "분석 결과가 ESTIMATOR 입력으로 연결"
+    ]
+  },
+
+  "demo_script": {
+    "total_time": "5분",
+    "steps": [
+      {
+        "time": "0:00~0:30",
+        "action": "서비스 소개",
+        "script": "18년 현장 경력을 AI로 구현한 JH EstimateAI입니다. 기존 견적 툴과 달리 5개의 전문 AI 에이전트가 협력합니다."
+      },
+      {
+        "time": "0:30~1:30",
+        "action": "scenario_1 실행",
+        "script": "30평 아파트 전체 인테리어를 입력하겠습니다. 에이전트들이 순서대로 처리하는 것을 보세요."
+      },
+      {
+        "time": "1:30~2:30",
+        "action": "결과 설명",
+        "script": "공종별 내역, 단가, 전문가 검증 결과가 자동 생성됩니다. PDF도 즉시 다운로드 가능합니다."
+      },
+      {
+        "time": "2:30~3:30",
+        "action": "scenario_2 실행 (VALIDATOR 강조)",
+        "script": "이제 의도적으로 공사 범위를 줄여보겠습니다. 18년 현장 기준으로 이상치를 탐지합니다."
+      },
+      {
+        "time": "3:30~4:30",
+        "action": "scenario_3 실행 (SCANNER)",
+        "script": "사진을 업로드하면 공간을 자동 분석하여 견적에 반영합니다."
+      },
+      {
+        "time": "4:30~5:00",
+        "action": "수익화 모델 언급",
+        "script": "B2C(일반인), B2B(시공업체), B2G(공공기관) 3개 채널로 즉시 수익화 가능한 구조입니다."
+      }
+    ]
+  }
+}
