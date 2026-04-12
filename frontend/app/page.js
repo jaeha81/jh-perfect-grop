@@ -1,95 +1,14 @@
 'use client';
 import { useState, useRef } from 'react';
 
-// ── 스타일 ──────────────────────────────────────────────
-const s = {
-  wrap: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem', background: '#0a0a0f' },
-  inner: { width: '100%', maxWidth: '680px' },
-
-  // 헤더
-  logo: { fontSize: '2.2rem', fontWeight: 800, margin: '0 0 0.3rem', background: 'linear-gradient(135deg,#7c6af7,#22d3a0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  sub: { color: '#6b6a80', margin: '0 0 2rem', fontSize: '0.9rem' },
-
-  // 카드
-  card: { background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '2rem', marginBottom: '1.2rem' },
-  cardTitle: { color: '#a09eb8', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1.2rem' },
-
-  // 폼
-  field: { marginBottom: '1.1rem' },
-  label: { display: 'block', color: '#8b8a9e', fontSize: '0.83rem', marginBottom: '0.4rem', fontWeight: 500 },
-  input: { width: '100%', background: '#0d0d12', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '8px', color: '#e8e6f0', padding: '0.65rem 1rem', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' },
-  select: { width: '100%', background: '#0d0d12', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '8px', color: '#e8e6f0', padding: '0.65rem 1rem', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' },
-  textarea: { width: '100%', background: '#0d0d12', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '8px', color: '#e8e6f0', padding: '0.65rem 1rem', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', resize: 'vertical', minHeight: '80px' },
-
-  // 이미지 업로드
-  imgUpload: { width: '100%', border: '2px dashed rgba(124,106,247,0.3)', borderRadius: '10px', padding: '1.2rem', textAlign: 'center', cursor: 'pointer', boxSizing: 'border-box', transition: 'border-color .2s' },
-  imgUploadHover: { borderColor: 'rgba(124,106,247,0.7)' },
-  imgPreview: { maxWidth: '100%', maxHeight: '160px', borderRadius: '8px', objectFit: 'cover', marginTop: '0.6rem' },
-
-  // 버튼
-  btn: { width: '100%', padding: '0.85rem', background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', marginTop: '0.5rem', letterSpacing: '0.02em' },
-  btnDisabled: { opacity: 0.55, cursor: 'not-allowed' },
-
-  // 에이전트 파이프라인 표시
-  pipeline: { display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
-  agentStep: (active, done) => ({
-    padding: '0.35rem 0.75rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600,
-    background: done ? 'rgba(34,211,160,0.15)' : active ? 'rgba(124,106,247,0.2)' : 'rgba(255,255,255,0.05)',
-    color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
-    border: `1px solid ${done ? 'rgba(34,211,160,0.3)' : active ? 'rgba(124,106,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
-    transition: 'all .3s',
-  }),
-  pipelineArrow: { color: '#333', fontSize: '0.85rem' },
-
-  // 결과 섹션
-  sectionTitle: { color: '#a09eb8', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.8rem' },
-  costRange: { fontSize: '1.5rem', fontWeight: 800, color: '#7c6af7', marginBottom: '0.4rem' },
-  costSub: { color: '#555', fontSize: '0.82rem', marginBottom: '1.4rem' },
-
-  // breakdown 바
-  barWrap: { marginBottom: '0.55rem' },
-  barLabel: { display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.83rem' },
-  barKey: { color: '#8b8a9e' },
-  barVal: { color: '#c4c2d8', fontWeight: 600 },
-  barTrack: { height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' },
-  barFill: (pct) => ({ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#7c6af7,#22d3a0)', borderRadius: '4px', transition: 'width .8s ease' }),
-
-  // 요약
-  summary: { color: '#8b8a9e', fontSize: '0.88rem', lineHeight: 1.65, marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)' },
-
-  // VALIDATOR 플래그
-  flag: (sev) => ({
-    display: 'flex', gap: '0.6rem', alignItems: 'flex-start',
-    padding: '0.7rem 0.9rem', borderRadius: '8px', marginBottom: '0.6rem',
-    background: sev === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-    border: `1px solid ${sev === 'error' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
-  }),
-  flagBadge: (sev) => ({
-    padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
-    background: sev === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-    color: sev === 'error' ? '#f87171' : '#fbbf24',
-  }),
-  flagText: { flex: 1 },
-  flagMsg: { color: '#c4c2d8', fontSize: '0.84rem', marginBottom: '0.2rem' },
-  flagSug: { color: '#6b6a80', fontSize: '0.78rem' },
-
-  // 전문가 총평
-  expertBox: { background: 'rgba(34,211,160,0.05)', border: '1px solid rgba(34,211,160,0.2)', borderRadius: '10px', padding: '1rem 1.2rem' },
-  expertText: { color: '#a0d9cc', fontSize: '0.88rem', lineHeight: 1.65 },
-
-  // PDF 버튼
-  pdfBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.2rem', background: 'rgba(124,106,247,0.15)', border: '1px solid rgba(124,106,247,0.4)', borderRadius: '8px', color: '#a78bfa', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', marginTop: '1rem' },
-
-  // SCANNER 박스
-  scannerBox: { background: 'rgba(34,211,160,0.06)', border: '1px solid rgba(34,211,160,0.2)', borderRadius: '8px', padding: '0.8rem 1rem', marginBottom: '0.8rem', color: '#7ac9bb', fontSize: '0.85rem', lineHeight: 1.55 },
-
-  // 에러
-  err: { color: '#f87171', fontSize: '0.85rem', marginTop: '0.5rem' },
-};
-
 const AGENTS = ['SCANNER', 'ESTIMATOR', 'PRICER', 'VALIDATOR', 'REPORTER'];
 
-// ── 컴포넌트 ─────────────────────────────────────────────
+const DEMO_VALUES = {
+  type: '인테리어',
+  area: '99.17',
+  description: '아파트 전체 인테리어, 주방 풀셋 교체(씽크대/가전), 욕실 2개 타일+양변기+세면대, 거실+방3개 강마루, 도배 전체 실크, 조명 LED 전체 교체',
+};
+
 export default function Home() {
   const [form, setForm] = useState({ type: '인테리어', area: '', description: '' });
   const [imgFile, setImgFile] = useState(null);   // { preview, base64 }
@@ -103,6 +22,11 @@ export default function Home() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const fmt = (n) => n != null ? n.toLocaleString('ko-KR') + '원' : '-';
+
+  // 데모 자동 입력
+  function loadDemo() {
+    setForm(DEMO_VALUES);
+  }
 
   // 이미지 → base64 변환
   function handleImage(file) {
@@ -185,85 +109,166 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
 
+  // Excel 다운로드
+  function downloadExcel() {
+    if (!result?.excel_base64) return;
+    const blob = new Blob([Uint8Array.from(atob(result.excel_base64), c => c.charCodeAt(0))], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `JH견적서_${result.type}_${result.area}m².xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // breakdown 합계
   const total = result ? Object.values(result.breakdown || {}).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <div style={s.wrap}>
-      <div style={s.inner}>
+    <div className="min-h-screen flex flex-col items-center px-8 py-8 bg-[#0a0a0f]">
+      <div className="w-full max-w-[680px]">
 
         {/* 헤더 */}
-        <h1 style={s.logo}>JH EstimateAI</h1>
-        <p style={s.sub}>18년 현장 경험 기반 · 5 에이전트 AI 견적 시스템</p>
+        <h1
+          className="text-[2.2rem] font-extrabold mb-[0.3rem] bg-transparent"
+          style={{ background: 'linear-gradient(135deg,#7c6af7,#22d3a0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+        >
+          JH EstimateAI
+        </h1>
+        <p className="text-[#6b6a80] mb-8 text-[0.9rem]">18년 현장 경험 기반 · 5 에이전트 AI 견적 시스템</p>
 
-        {/* 입력 폼 */}
-        <div style={s.card}>
-          <div style={s.cardTitle}>견적 정보 입력</div>
+        {/* 입력 폼 카드 */}
+        <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
+          <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">견적 정보 입력</div>
+
+          {/* 데모 실행 버튼 */}
+          <button
+            type="button"
+            onClick={loadDemo}
+            className="w-full mb-5 py-[0.6rem] rounded-lg border border-[#22d3a0]/40 bg-[#22d3a0]/10 text-[#22d3a0] text-[0.88rem] font-semibold cursor-pointer hover:bg-[#22d3a0]/20 transition-colors duration-200"
+          >
+            ▶ 데모 실행 — 30평 아파트 인테리어 샘플 입력
+          </button>
+
           <form onSubmit={submit}>
 
-            <div style={s.field}>
-              <label style={s.label}>공사 유형</label>
-              <select style={s.select} value={form.type} onChange={set('type')}>
+            <div className="mb-[1.1rem]">
+              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">공사 유형</label>
+              <select
+                className="w-full bg-[#0d0d12] border border-white/[0.09] rounded-lg text-[#e8e6f0] px-4 py-[0.65rem] text-[0.95rem] outline-none"
+                value={form.type}
+                onChange={set('type')}
+              >
                 <option>인테리어</option>
                 <option>신축</option>
                 <option>리모델링</option>
               </select>
             </div>
 
-            <div style={s.field}>
-              <label style={s.label}>면적 (m²)</label>
-              <input style={s.input} type="number" min="1" step="0.1" placeholder="예: 84.5" value={form.area} onChange={set('area')} required />
+            <div className="mb-[1.1rem]">
+              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">면적 (m²)</label>
+              <input
+                className="w-full bg-[#0d0d12] border border-white/[0.09] rounded-lg text-[#e8e6f0] px-4 py-[0.65rem] text-[0.95rem] outline-none"
+                type="number"
+                min="1"
+                step="0.1"
+                placeholder="예: 84.5"
+                value={form.area}
+                onChange={set('area')}
+                required
+              />
             </div>
 
-            <div style={s.field}>
-              <label style={s.label}>공사 설명</label>
-              <textarea style={s.textarea} placeholder="예: 아파트 전체 인테리어, 주방·욕실 포함, 강마루+실크도배" value={form.description} onChange={set('description')} required />
+            <div className="mb-[1.1rem]">
+              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">공사 설명</label>
+              <textarea
+                className="w-full bg-[#0d0d12] border border-white/[0.09] rounded-lg text-[#e8e6f0] px-4 py-[0.65rem] text-[0.95rem] outline-none resize-y min-h-[80px]"
+                placeholder="예: 아파트 전체 인테리어, 주방·욕실 포함, 강마루+실크도배"
+                value={form.description}
+                onChange={set('description')}
+                required
+              />
             </div>
 
             {/* 이미지 업로드 (SCANNER) */}
-            <div style={s.field}>
-              <label style={s.label}>공간 사진 첨부 <span style={{ color: '#555', fontWeight: 400 }}>(선택 · SCANNER 분석)</span></label>
+            <div className="mb-[1.1rem]">
+              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">
+                공간 사진 첨부 <span className="text-[#555] font-normal">(선택 · SCANNER 분석)</span>
+              </label>
               <div
-                style={{ ...s.imgUpload, ...(imgHover ? s.imgUploadHover : {}) }}
+                className="w-full rounded-[10px] p-5 text-center cursor-pointer box-border transition-[border-color] duration-200"
+                style={{
+                  border: imgHover ? '2px dashed rgba(124,106,247,0.7)' : '2px dashed rgba(124,106,247,0.3)',
+                }}
                 onClick={() => fileRef.current.click()}
                 onDragOver={(e) => { e.preventDefault(); setImgHover(true); }}
                 onDragLeave={() => setImgHover(false)}
                 onDrop={(e) => { e.preventDefault(); setImgHover(false); handleImage(e.dataTransfer.files[0]); }}
               >
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleImage(e.target.files[0])} />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => handleImage(e.target.files[0])}
+                />
                 {imgFile ? (
-                  <img src={imgFile.preview} alt="preview" style={s.imgPreview} />
+                  <img src={imgFile.preview} alt="preview" className="max-w-full max-h-[160px] rounded-lg object-cover mt-[0.6rem]" />
                 ) : (
-                  <span style={{ color: '#555', fontSize: '0.85rem' }}>클릭하거나 이미지를 드래그하세요</span>
+                  <span className="text-[#555] text-[0.85rem]">클릭하거나 이미지를 드래그하세요</span>
                 )}
               </div>
               {imgFile && (
-                <button type="button" onClick={() => setImgFile(null)} style={{ marginTop: '0.4rem', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '0.8rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setImgFile(null)}
+                  className="mt-[0.4rem] bg-transparent border-none text-[#555] cursor-pointer text-[0.8rem]"
+                >
                   ✕ 이미지 제거
                 </button>
               )}
             </div>
 
-            <button style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }} type="submit" disabled={loading}>
+            <button
+              className="w-full py-[0.85rem] border-none rounded-[10px] text-white text-[1rem] font-bold cursor-pointer mt-[0.5rem] tracking-[0.02em] transition-opacity duration-200"
+              style={{
+                background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
+                opacity: loading ? 0.55 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+              type="submit"
+              disabled={loading}
+            >
               {loading ? '에이전트 분석 중...' : '견적 산출하기'}
             </button>
-            {error && <p style={s.err}>⚠ {error}</p>}
+            {error && <p className="text-[#f87171] text-[0.85rem] mt-[0.5rem]">⚠ {error}</p>}
           </form>
         </div>
 
         {/* 에이전트 파이프라인 진행 */}
         {(loading || result) && (
-          <div style={s.card}>
-            <div style={s.cardTitle}>에이전트 파이프라인</div>
-            <div style={s.pipeline}>
-              {AGENTS.map((name, i) => (
-                <span key={name}>
-                  <span style={s.agentStep(activeStep === i, doneSteps.includes(i))}>
-                    {doneSteps.includes(i) ? '✓ ' : activeStep === i ? '⟳ ' : ''}{name}
+          <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
+            <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">에이전트 파이프라인</div>
+            <div className="flex items-center gap-[0.4rem] mb-6 flex-wrap">
+              {AGENTS.map((name, i) => {
+                const done = doneSteps.includes(i);
+                const active = activeStep === i;
+                return (
+                  <span key={name}>
+                    <span
+                      className="text-[0.78rem] font-semibold px-[0.75rem] py-[0.35rem] rounded-[20px] transition-all duration-300"
+                      style={{
+                        background: done ? 'rgba(34,211,160,0.15)' : active ? 'rgba(124,106,247,0.2)' : 'rgba(255,255,255,0.05)',
+                        color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
+                        border: `1px solid ${done ? 'rgba(34,211,160,0.3)' : active ? 'rgba(124,106,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                      }}
+                    >
+                      {done ? '✓ ' : active ? '⟳ ' : ''}{name}
+                    </span>
+                    {i < AGENTS.length - 1 && <span className="text-[#333] text-[0.85rem]"> → </span>}
                   </span>
-                  {i < AGENTS.length - 1 && <span style={s.pipelineArrow}> → </span>}
-                </span>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -273,64 +278,107 @@ export default function Home() {
           <>
             {/* SCANNER 결과 */}
             {result.scanner_context && (
-              <div style={s.card}>
-                <div style={s.cardTitle}>SCANNER — 공간 분석 결과</div>
-                <div style={s.scannerBox}>{result.scanner_context}</div>
+              <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
+                <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">SCANNER — 공간 분석 결과</div>
+                <div className="bg-[rgba(34,211,160,0.06)] border border-[rgba(34,211,160,0.2)] rounded-lg px-4 py-[0.8rem] mb-[0.8rem] text-[#7ac9bb] text-[0.85rem] leading-[1.55]">
+                  {result.scanner_context}
+                </div>
               </div>
             )}
 
             {/* 견적 요약 */}
-            <div style={s.card}>
-              <div style={s.cardTitle}>견적 결과</div>
-              <div style={s.costRange}>{fmt(result.min_cost)} ~ {fmt(result.max_cost)}</div>
-              <div style={s.costSub}>{result.area}m² · {result.type} · 기준단가 {fmt(result.unit_price)}/m²</div>
+            <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
+              <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">견적 결과</div>
+              <div className="text-[1.5rem] font-extrabold text-[#7c6af7] mb-[0.4rem]">
+                {fmt(result.min_cost)} ~ {fmt(result.max_cost)}
+              </div>
+              <div className="text-[#555] text-[0.82rem] mb-6">
+                {result.area}m² · {result.type} · 기준단가 {fmt(result.unit_price)}/m²
+              </div>
 
               {/* breakdown 바 차트 */}
-              <div style={s.sectionTitle}>공종별 내역</div>
+              <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-[0.8rem]">공종별 내역</div>
               {Object.entries(result.breakdown || {}).map(([k, v]) => {
                 const pct = total > 0 ? Math.round(v / total * 100) : 0;
                 return (
-                  <div key={k} style={s.barWrap}>
-                    <div style={s.barLabel}>
-                      <span style={s.barKey}>{k}</span>
-                      <span style={s.barVal}>{fmt(v)} <span style={{ color: '#444', fontWeight: 400 }}>({pct}%)</span></span>
+                  <div key={k} className="mb-[0.55rem]">
+                    <div className="flex justify-between mb-[0.2rem] text-[0.83rem]">
+                      <span className="text-[#8b8a9e]">{k}</span>
+                      <span className="text-[#c4c2d8] font-semibold">
+                        {fmt(v)} <span className="text-[#444] font-normal">({pct}%)</span>
+                      </span>
                     </div>
-                    <div style={s.barTrack}><div style={s.barFill(pct)} /></div>
+                    <div className="h-[6px] bg-white/[0.06] rounded overflow-hidden">
+                      <div
+                        className="h-full rounded"
+                        style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c6af7,#22d3a0)', transition: 'width .8s ease' }}
+                      />
+                    </div>
                   </div>
                 );
               })}
 
-              {result.summary && <p style={s.summary}>{result.summary}</p>}
-
-              {/* PDF 다운로드 */}
-              {result.pdf_base64 && (
-                <button style={s.pdfBtn} onClick={downloadPdf}>
-                  ↓ 견적서 PDF 다운로드
-                </button>
+              {result.summary && (
+                <p className="text-[#8b8a9e] text-[0.88rem] leading-[1.65] mt-4 pt-4 border-t border-white/[0.06]">
+                  {result.summary}
+                </p>
               )}
+
+              {/* 다운로드 버튼 영역 */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                {result.pdf_base64 && (
+                  <button
+                    className="inline-flex items-center gap-2 px-5 py-[0.65rem] bg-[rgba(124,106,247,0.15)] border border-[rgba(124,106,247,0.4)] rounded-lg text-[#a78bfa] text-[0.88rem] font-semibold cursor-pointer hover:bg-[rgba(124,106,247,0.25)] transition-colors duration-200"
+                    onClick={downloadPdf}
+                  >
+                    ↓ 견적서 PDF 다운로드
+                  </button>
+                )}
+                {result.excel_base64 && (
+                  <button
+                    className="inline-flex items-center gap-2 px-5 py-[0.65rem] bg-[rgba(34,211,160,0.1)] border border-[rgba(34,211,160,0.35)] rounded-lg text-[#22d3a0] text-[0.88rem] font-semibold cursor-pointer hover:bg-[rgba(34,211,160,0.2)] transition-colors duration-200"
+                    onClick={downloadExcel}
+                  >
+                    ↓ 견적서 Excel 다운로드
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* VALIDATOR 결과 */}
             {(result.validator_flags?.length > 0 || result.expert_comment) && (
-              <div style={s.card}>
-                <div style={s.cardTitle}>VALIDATOR — 18년 현장 검증</div>
+              <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
+                <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">VALIDATOR — 18년 현장 검증</div>
 
                 {result.validator_flags?.map((flag, i) => (
-                  <div key={i} style={s.flag(flag.severity)}>
-                    <span style={s.flagBadge(flag.severity)}>
+                  <div
+                    key={i}
+                    className="flex gap-[0.6rem] items-start px-[0.9rem] py-[0.7rem] rounded-lg mb-[0.6rem]"
+                    style={{
+                      background: flag.severity === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                      border: `1px solid ${flag.severity === 'error' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                    }}
+                  >
+                    <span
+                      className="px-[0.5rem] py-[0.15rem] rounded text-[0.72rem] font-bold whitespace-nowrap"
+                      style={{
+                        background: flag.severity === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                        color: flag.severity === 'error' ? '#f87171' : '#fbbf24',
+                      }}
+                    >
                       {flag.severity === 'error' ? '오류' : '주의'}
                     </span>
-                    <div style={s.flagText}>
-                      <div style={s.flagMsg}>[{flag.category}] {flag.message}</div>
-                      <div style={s.flagSug}>→ {flag.suggestion}</div>
+                    <div className="flex-1">
+                      <div className="text-[#c4c2d8] text-[0.84rem] mb-[0.2rem]">[{flag.category}] {flag.message}</div>
+                      <div className="text-[#6b6a80] text-[0.78rem]">→ {flag.suggestion}</div>
                     </div>
                   </div>
                 ))}
 
                 {result.expert_comment && (
-                  <div style={s.expertBox}>
-                    <div style={{ color: '#22d3a0', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.06em' }}>전문가 총평</div>
-                    <div style={s.expertText}>{result.expert_comment}</div>
+                  <div className="bg-[rgba(34,211,160,0.05)] border border-[rgba(34,211,160,0.2)] rounded-[10px] px-5 py-4">
+                    <div className="text-[#22d3a0] text-[0.75rem] font-bold mb-2 tracking-[0.06em]">전문가 총평</div>
+                    <div className="text-[#a0d9cc] text-[0.88rem] leading-[1.65]">{result.expert_comment}</div>
                   </div>
                 )}
               </div>

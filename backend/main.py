@@ -12,7 +12,7 @@ load_dotenv()
 
 from agents.estimator import run_estimator
 from agents.pricer import run_pricer
-from agents.reporter import run_reporter
+from agents.reporter import run_reporter, run_reporter_excel
 from agents.scanner import run_scanner
 from agents.validator import run_validator
 
@@ -112,6 +112,10 @@ async def estimate(req: EstimateRequest):
     pdf_b64 = run_reporter(estimate_data)
     if pdf_b64:
         estimate_data["pdf_base64"] = pdf_b64
+
+    excel_b64 = run_reporter_excel(estimate_data)
+    if excel_b64:
+        estimate_data["excel_base64"] = excel_b64
 
     return estimate_data
 

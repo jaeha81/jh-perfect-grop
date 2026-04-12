@@ -167,3 +167,136 @@ def run_reporter(estimate_data: dict) -> str | None:
 
     except Exception:
         return None
+
+
+def run_reporter_excel(estimate_data: dict) -> str | None:
+    """Excel 견적서 생성 후 base64 반환, 실패 시 None"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        return None
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "견적서"
+
+    # 열 너비
+    ws.column_dimensions['A'].width = 20
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 20
+
+    # 스타일 정의
+    purple = "7C6AF7"
+    green = "22D3A0"
+    dark_bg = "13131A"
+    gray = "A09EB8"
+    border_thin = Border(
+        left=Side(style='thin', color='444444'),
+        right=Side(style='thin', color='444444'),
+        top=Side(style='thin', color='444444'),
+        bottom=Side(style='thin', color='444444'),
+    )
+
+    row = 1
+
+    # 제목
+    ws.merge_cells(f'A{row}:D{row}')
+    ws[f'A{row}'] = 'JH EstimateAI 견적서'
+    ws[f'A{row}'].font = Font(name='맑은 고딕', size=18, bold=True, color=purple)
+    ws[f'A{row}'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[row].height = 36
+    row += 1
+
+    # 부제목
+    ws.merge_cells(f'A{row}:D{row}')
+    ws[f'A{row}'] = '18년 현장 경험 기반 · 5 에이전트 AI 견적 시스템'
+    ws[f'A{row}'].font = Font(name='맑은 고딕', size=10, color=gray)
+    ws[f'A{row}'].alignment = Alignment(horizontal='center')
+    row += 2
+
+    # 기본 정보
+    info = [
+        ('공사 유형', estimate_data.get('type', '-')),
+        ('면적', f"{estimate_data.get('area', 0)}m²"),
+        ('최소 견적', f"{estimate_data.get('min_cost', 0):,}원"),
+        ('최대 견적', f"{estimate_data.get('max_cost', 0):,}원"),
+        ('기준 단가', f"{estimate_data.get('unit_price', 0):,}원/m²"),
+        ('작성일', datetime.now().strftime('%Y-%m-%d')),
+    ]
+    for label, value in info:
+        ws[f'A{row}'] = label
+        ws[f'A{row}'].font = Font(name='맑은 고딕', bold=True, color=gray)
+        ws[f'B{row}'] = value
+        ws[f'B{row}'].font = Font(name='맑은 고딕', color='E8E6F0')
+        row += 1
+    row += 1
+
+    # 공종별 내역 헤더
+    headers = ['공종', '금액 (원)', '비율 (%)', '비고']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col, value=h)
+        cell.font = Font(name='맑은 고딕', bold=True, color='FFFFFF')
+        cell.fill = PatternFill(start_color=purple, end_color=purple, fill_type='solid')
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = border_thin
+    row += 1
+
+    breakdown = estimate_data.get('breakdown', {})
+    total = sum(breakdown.values()) or 1
+    for name, amount in breakdown.items():
+        pct = round(amount / total * 100, 1)
+        ws.cell(row=row, column=1, value=name).border = border_thin
+        amt_cell = ws.cell(row=row, column=2, value=amount)
+        amt_cell.number_format = '#,##0'
+        amt_cell.border = border_thin
+        pct_cell = ws.cell(row=row, column=3, value=pct)
+        pct_cell.number_format = '0.0"%"'
+        pct_cell.border = border_thin
+        ws.cell(row=row, column=4, value='').border = border_thin
+        row += 1
+
+    # 합계
+    ws.cell(row=row, column=1, value='합계').font = Font(name='맑은 고딕', bold=True)
+    total_cell = ws.cell(row=row, column=2, value=total)
+    total_cell.font = Font(name='맑은 고딕', bold=True, color=purple)
+    total_cell.number_format = '#,##0'
+    row += 2
+
+    # AI 요약
+    if estimate_data.get('summary'):
+        ws.merge_cells(f'A{row}:D{row}')
+        ws[f'A{row}'] = 'AI 전문가 요약'
+        ws[f'A{row}'].font = Font(name='맑은 고딕', bold=True, color=green)
+        row += 1
+        ws.merge_cells(f'A{row}:D{row}')
+        ws[f'A{row}'] = estimate_data['summary']
+        ws[f'A{row}'].alignment = Alignment(wrap_text=True)
+        ws.row_dimensions[row].height = 45
+        row += 2
+
+    # VALIDATOR 플래그
+    flags = estimate_data.get('validator_flags', [])
+    if flags:
+        ws.merge_cells(f'A{row}:D{row}')
+        ws[f'A{row}'] = 'VALIDATOR — 18년 현장 검증 결과'
+        ws[f'A{row}'].font = Font(name='맑은 고딕', bold=True, color='F87171')
+        row += 1
+        for flag in flags:
+            sev = flag.get('severity', 'warning')
+            msg = f"[{flag.get('category','')}] {flag.get('message','')} → {flag.get('suggestion','')}"
+            ws.merge_cells(f'A{row}:D{row}')
+            ws[f'A{row}'] = f"{'⚠ ' if sev=='warning' else '✕ '}{msg}"
+            ws[f'A{row}'].font = Font(name='맑은 고딕', color='FBBF24' if sev=='warning' else 'F87171')
+            ws[f'A{row}'].alignment = Alignment(wrap_text=True)
+            ws.row_dimensions[row].height = 30
+            row += 1
+
+    # base64 반환
+    import io
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode()
