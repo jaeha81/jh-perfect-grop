@@ -15,6 +15,8 @@
 | [unit-prices.md](unit-prices.md) | 공종별 단가 DB 기준 | ✅ 완료 |
 | [validator-rules.md](validator-rules.md) | 18년 현장 검증 룰셋 | ✅ 완료 |
 | [api-spec.md](api-spec.md) | API 엔드포인트 명세 | ✅ 완료 |
+| [cross-project-analysis.md](cross-project-analysis.md) | 견적시스템 교차 분석 + 보완 계획 | ✅ 2026-04-12 |
+| [future-upgrades.md](future-upgrades.md) | 대회 이후 업그레이드 로드맵 | ✅ 2026-04-12 |
 
 ## 조회 가이드
 
@@ -24,3 +26,5 @@
 | 단가 기준이 궁금할 때 | unit-prices.md |
 | VALIDATOR 룰이 궁금할 때 | validator-rules.md |
 | API 연동 방법이 궁금할 때 | api-spec.md |
+| 두 프로젝트 관계가 궁금할 때 | cross-project-analysis.md |
+| 대회 이후 계획이 궁금할 때 | future-upgrades.md |
