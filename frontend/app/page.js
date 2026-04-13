@@ -171,7 +171,7 @@ export default function Home() {
                 className="w-full bg-[#0d0d12] border border-white/[0.09] rounded-lg text-[#e8e6f0] px-4 py-[0.65rem] text-[0.95rem] outline-none"
                 type="number"
                 min="1"
-                step="0.1"
+                step="any"
                 placeholder="예: 84.5"
                 value={form.area}
                 onChange={set('area')}

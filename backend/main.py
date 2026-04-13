@@ -105,6 +105,8 @@ async def estimate(req: EstimateRequest):
         "summary": summary,
         "validator_flags": validator_out.get("flags", []),
         "expert_comment": validator_out.get("expert_comment", ""),
+        "is_valid": validator_out.get("is_valid", True),
+        "rule_engine_version": validator_out.get("rule_engine_version", ""),
         "scanner_context": scanner_context,
     }
 
