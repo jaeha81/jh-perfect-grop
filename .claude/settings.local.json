@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s \"https://api.github.com/users/jaeha81/repos?sort=updated&per_page=20\")",
+      "Bash(python3 -c \"import sys,json; repos=json.load\\(sys.stdin\\); [print\\(f'{r[\\\\\"name\\\\\"]} | {r[\\\\\"description\\\\\"]} | stars:{r[\\\\\"stargazers_count\\\\\"]} | updated:{r[\\\\\"updated_at\\\\\"][:10]}'\\) for r in repos]\")",
+      "Bash(gh api:*)",
+      "Bash(sort -t'|' -k4 -r)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'공종 수: {len\\(d\\)}개'\\); [print\\(f' {k}'\\) for k in list\\(d.keys\\(\\)\\)[:10]]\")",
+      "Bash(curl -s -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' -d '{\"description\":\"아파트 전체 인테리어, 주방 풀셋 교체\\(씽크대/가전\\), 욕실 2개 타일+양변기+세면대, 거실+방3개 강마루, 도배 전체 실크, 조명 LED 전체 교체\",\"area\":99.17,\"type\":\"인테리어\"}' --max-time 120)",
+      "Bash(python -c ':*)",
+      "Bash(curl -s -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' -d '{\"description\":\"아파트 전체 인테리어, 주방 풀셋 교체, 욕실 2개 타일+양변기+세면대, 거실+방3개 강마루, 도배 전체 실크\",\"area\":99.17,\"type\":\"인테리어\"}' --max-time 120 -o /tmp/result.json)",
+      "Bash(curl -s -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' -d '{\"description\":\"아파트 전체 인테리어, 주방 풀셋 교체, 욕실 2개 타일+양변기+세면대, 강마루, 도배 실크\",\"area\":99.17,\"type\":\"인테리어\"}' --max-time 120 -o D:/tmp/result.json -w '%{http_code}')",
+      "Bash(curl -s http://localhost:8001/api/health)",
+      "Bash(curl -v -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' --data-raw '{\"description\":\"아파트 전체 인테리어\",\"area\":99.17,\"type\":\"인테리어\"}' --max-time 30)",
+      "Bash(curl -s -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' --data-binary @D:/tmp/req1.json --max-time 120 -o D:/tmp/res1.json -w 'HTTP:%{http_code}')",
+      "Bash(curl -s -X POST http://localhost:8001/api/estimate -H 'Content-Type: application/json' --data-binary @D:/tmp/req2.json --max-time 120 -o D:/tmp/res2.json -w 'HTTP:%{http_code}')",
+      "Bash(python3 -c ':*)",
+      "Skill(jh-deploy)",
+      "Skill(jh-deploy:*)"
+    ]
+  }
+}
