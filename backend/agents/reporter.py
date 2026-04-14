@@ -1,7 +1,10 @@
 """Agent 5: REPORTER — fpdf2 PDF 견적서 생성"""
 import base64
+import logging
 import os
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 try:
     from fpdf import FPDF
@@ -9,18 +12,36 @@ try:
 except ImportError:
     _FPDF_OK = False
 
-# Windows 한글 폰트 경로 후보
-_FONT_CANDIDATES = [
-    "C:/Windows/Fonts/malgun.ttf",    # Malgun Gothic (Windows 기본)
-    "C:/Windows/Fonts/malgunbd.ttf",  # Malgun Gothic Bold
+# 한글 폰트 경로 후보 (regular / bold 분리)
+_FONT_REGULAR_CANDIDATES = [
+    "C:/Windows/Fonts/malgun.ttf",
     "C:/Windows/Fonts/NanumGothic.ttf",
-    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  # Linux fallback
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+]
+
+_FONT_BOLD_CANDIDATES = [
+    "C:/Windows/Fonts/malgunbd.ttf",
+    "C:/Windows/Fonts/NanumGothicBold.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
 ]
 
 
 def _find_font() -> str | None:
-    for path in _FONT_CANDIDATES:
+    for path in _FONT_REGULAR_CANDIDATES:
         if os.path.exists(path):
+            return path
+    return None
+
+
+def _find_bold_font() -> str | None:
+    """bold 전용 폰트. regular와 동일 파일이면 None 반환 (충돌 방지)"""
+    reg = _find_font()
+    for path in _FONT_BOLD_CANDIDATES:
+        if os.path.exists(path) and path != reg:
             return path
     return None
 
@@ -36,15 +57,28 @@ def run_reporter(estimate_data: dict) -> str | None:
         pdf.set_margins(15, 15, 15)
 
         font_path = _find_font()
+        bold_path = _find_bold_font()
         if font_path:
             pdf.add_font("KR", "", font_path)
-            pdf.add_font("KR", "B", font_path)
+            if bold_path:
+                pdf.add_font("KR", "B", bold_path)
+            else:
+                # bold 폰트 없으면 regular로 대체 등록 — fpdf2 FPDFException 방지
+                pdf.add_font("KR", "B", font_path)
+                bold_path = font_path  # bold 등록 완료로 표시
             font_name = "KR"
+            logger.info("한글 폰트 로드 성공: regular=%s bold=%s", font_path, bold_path)
         else:
             font_name = "Helvetica"
+            logger.warning(
+                "한글 폰트를 찾을 수 없음 — Helvetica fallback 사용 (한글 깨짐 가능). "
+                "후보 경로: %s", _FONT_REGULAR_CANDIDATES
+            )
+        # bold 스타일이 등록되지 않은 경우 "B" 요청 시 regular로 대체
+        _bold_style = "B" if (font_name == "Helvetica" or bold_path) else ""
 
         # ── 헤더 ──────────────────────────────────────
-        pdf.set_font(font_name, "B", 20)
+        pdf.set_font(font_name, _bold_style, 20)
         pdf.cell(0, 14, "JH EstimateAI  견적서", new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.set_font(font_name, "", 9)
         pdf.set_text_color(140, 140, 140)
@@ -54,7 +88,7 @@ def run_reporter(estimate_data: dict) -> str | None:
         pdf.ln(6)
 
         # ── 공사 개요 ─────────────────────────────────
-        pdf.set_font(font_name, "B", 12)
+        pdf.set_font(font_name, _bold_style, 12)
         pdf.cell(0, 8, "■ 공사 개요", new_x="LMARGIN", new_y="NEXT")
         pdf.set_font(font_name, "", 10)
 
@@ -72,23 +106,23 @@ def run_reporter(estimate_data: dict) -> str | None:
             ("최대 견적", f"{max_cost:,} 원"),
         ]
         for label, value in info_rows:
-            pdf.set_font(font_name, "B", 10)
+            pdf.set_font(font_name, _bold_style, 10)
             pdf.cell(50, 7, label, border="B")
             pdf.set_font(font_name, "", 10)
             pdf.cell(0, 7, value, border="B", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(6)
 
         # ── 공종별 내역 테이블 ─────────────────────────
-        pdf.set_font(font_name, "B", 12)
+        pdf.set_font(font_name, _bold_style, 12)
         pdf.cell(0, 8, "■ 공종별 견적 내역", new_x="LMARGIN", new_y="NEXT")
 
         breakdown = estimate_data.get("breakdown", {})
-        total = sum(breakdown.values())
+        total = sum(breakdown.values()) or 1
 
         # 테이블 헤더
         pdf.set_fill_color(45, 45, 60)
         pdf.set_text_color(255, 255, 255)
-        pdf.set_font(font_name, "B", 10)
+        pdf.set_font(font_name, _bold_style, 10)
         pdf.cell(80, 8, "공종", border=1, fill=True)
         pdf.cell(55, 8, "금액", border=1, fill=True, align="R")
         pdf.cell(35, 8, "비중", border=1, fill=True, align="R", new_x="LMARGIN", new_y="NEXT")
@@ -107,7 +141,7 @@ def run_reporter(estimate_data: dict) -> str | None:
 
         # 합계 행
         pdf.set_fill_color(220, 230, 255)
-        pdf.set_font(font_name, "B", 11)
+        pdf.set_font(font_name, _bold_style, 11)
         pdf.cell(80, 9, "합 계 (기준가)", border=1, fill=True)
         pdf.cell(55, 9, f"{total:,} 원", border=1, fill=True, align="R")
         pdf.cell(35, 9, "100%", border=1, fill=True, align="R", new_x="LMARGIN", new_y="NEXT")
@@ -118,7 +152,7 @@ def run_reporter(estimate_data: dict) -> str | None:
         expert_comment = estimate_data.get("expert_comment", "")
 
         if flags:
-            pdf.set_font(font_name, "B", 12)
+            pdf.set_font(font_name, _bold_style, 12)
             pdf.cell(0, 8, "■ 전문가 검증 결과", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font(font_name, "", 9)
             for flag in flags:
@@ -138,7 +172,7 @@ def run_reporter(estimate_data: dict) -> str | None:
             pdf.ln(3)
 
         if expert_comment:
-            pdf.set_font(font_name, "B", 12)
+            pdf.set_font(font_name, _bold_style, 12)
             pdf.cell(0, 8, "■ 전문가 총평", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font(font_name, "", 10)
             pdf.multi_cell(0, 6, expert_comment)
@@ -147,7 +181,7 @@ def run_reporter(estimate_data: dict) -> str | None:
         # ── AI 요약 ────────────────────────────────────
         summary = estimate_data.get("summary", "")
         if summary:
-            pdf.set_font(font_name, "B", 12)
+            pdf.set_font(font_name, _bold_style, 12)
             pdf.cell(0, 8, "■ AI 견적 요약", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font(font_name, "", 10)
             pdf.multi_cell(0, 6, summary)
@@ -165,7 +199,8 @@ def run_reporter(estimate_data: dict) -> str | None:
         pdf_bytes = pdf.output()
         return base64.b64encode(pdf_bytes).decode("utf-8")
 
-    except Exception:
+    except Exception as e:
+        logger.error("run_reporter 실패: %s", e, exc_info=True)
         return None
 
 
