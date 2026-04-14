@@ -238,6 +238,7 @@ async def estimate_stream(req: EstimateRequest):
             if pdf_error:
                 estimate_data["pdf_error"] = pdf_error
 
+            yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'REPORTER', 'step': 4, 'data': {'has_pdf': bool(pdf_b64), 'has_excel': bool(excel_b64)}})}\n\n"
             yield f"data: {json.dumps({'event': 'complete', 'data': estimate_data})}\n\n"
 
         except Exception as e:
