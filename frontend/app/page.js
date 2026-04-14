@@ -46,6 +46,7 @@ export default function Home() {
   const [imgHover, setImgHover] = useState(false);
   const [activeStep, setActiveStep] = useState(-1);
   const [doneSteps, setDoneSteps] = useState([]);
+  const [parallelSteps, setParallelSteps] = useState(new Set()); // 병렬 실행 단계
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,7 +97,7 @@ export default function Home() {
   async function submit(e) {
     e.preventDefault();
     setError(''); setResult(null); setLoading(true);
-    setActiveStep(-1); setDoneSteps([]);
+    setActiveStep(-1); setDoneSteps([]); setParallelSteps(new Set());
 
     const body = {
       ...form,
@@ -134,6 +135,7 @@ export default function Home() {
 
             if (event === 'agent_start') {
               setActiveStep(step);
+              if (parsed.parallel) setParallelSteps(prev => new Set([...prev, step]));
             } else if (event === 'agent_done') {
               setDoneSteps(prev => [...new Set([...prev, step])]);
               setActiveStep(step + 1 < AGENTS.length ? step + 1 : -1);
@@ -162,7 +164,7 @@ export default function Home() {
     e.preventDefault();
     if (!form.area || !form.description) return;
     setError(''); setCompareResult(null); setLoading(true);
-    setActiveStep(0); setDoneSteps([]);
+    setActiveStep(0); setDoneSteps([]); setParallelSteps(new Set([2, 3]));
 
     const body = {
       ...form,
@@ -180,6 +182,7 @@ export default function Home() {
       const data = await res.json();
       setDoneSteps([0, 1, 2, 3, 4]);
       setActiveStep(-1);
+      setParallelSteps(new Set([2, 3])); // PRICER+VALIDATOR 병렬 유지 표시
       setCompareResult(data);
     } catch (err) {
       setError(err.message);
@@ -461,27 +464,49 @@ export default function Home() {
         {(loading || result) && (
           <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
             <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">에이전트 파이프라인</div>
-            <div className="flex items-center gap-[0.4rem] mb-6 flex-wrap">
+            <div className="flex items-center gap-[0.4rem] mb-4 flex-wrap">
               {AGENTS.map((name, i) => {
                 const done = doneSteps.includes(i);
                 const active = activeStep === i;
+                const isParallel = parallelSteps.has(i);
+                // VALIDATOR(3)→REPORTER(4) 사이는 병렬 구분선
+                const connector = i === 3 ? ' ⟹ ' : ' → ';
                 return (
-                  <span key={name}>
-                    <span
-                      className="text-xs sm:text-sm font-semibold px-[0.75rem] py-[0.35rem] rounded-[20px] transition-all duration-300"
-                      style={{
-                        background: done ? 'rgba(34,211,160,0.15)' : active ? 'rgba(124,106,247,0.2)' : 'rgba(255,255,255,0.05)',
-                        color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
-                        border: `1px solid ${done ? 'rgba(34,211,160,0.3)' : active ? 'rgba(124,106,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                      }}
-                    >
-                      {done ? '✓ ' : active ? '⟳ ' : ''}{name}
+                  <span key={name} className="flex items-center gap-[0.4rem]">
+                    <span className="relative">
+                      <span
+                        className="text-xs sm:text-sm font-semibold px-[0.75rem] py-[0.35rem] rounded-[20px] transition-all duration-300"
+                        style={{
+                          background: done ? 'rgba(34,211,160,0.15)' : active ? 'rgba(124,106,247,0.2)' : 'rgba(255,255,255,0.05)',
+                          color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
+                          border: `1px solid ${done ? 'rgba(34,211,160,0.3)' : active ? 'rgba(124,106,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                        }}
+                      >
+                        {done ? '✓ ' : active ? '⟳ ' : ''}{name}
+                      </span>
+                      {isParallel && (
+                        <span
+                          className="absolute -top-[0.9rem] left-1/2 -translate-x-1/2 text-[0.6rem] font-bold px-[0.4rem] py-[0.1rem] rounded-full whitespace-nowrap"
+                          style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
+                        >
+                          병렬
+                        </span>
+                      )}
                     </span>
-                    {i < AGENTS.length - 1 && <span className="text-[#333] text-[0.85rem]"> → </span>}
+                    {i < AGENTS.length - 1 && (
+                      <span style={{ color: i === 3 ? '#7c6af7' : '#333', fontSize: '0.85rem' }}>{connector}</span>
+                    )}
                   </span>
                 );
               })}
             </div>
+            {parallelSteps.size > 0 && (
+              <div className="text-[0.72rem] text-[#fbbf24]/60 mb-2">
+                {compareResult
+                  ? '⟹ 병렬 가동 — 저가·표준·고급 3등급 PRICER+VALIDATOR 동시 실행'
+                  : '⟹ 병렬 가동 — PDF·Excel·요약 동시 생성'}
+              </div>
+            )}
           </div>
         )}
 
