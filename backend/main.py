@@ -1,4 +1,5 @@
-"""JH EstimateAI — FastAPI Backend v0.2 (5 Agent Pipeline)"""
+"""JH EstimateAI — FastAPI Backend v0.3 (5 Agent Pipeline + Parallel Execution)"""
+import asyncio
 import json
 import os
 from typing import Optional
@@ -46,6 +47,15 @@ class EstimateRequest(BaseModel):
     image_base64: Optional[str] = None   # Wave 4 SCANNER
 
 
+class RecalculateRequest(BaseModel):
+    type: str
+    area: float
+    breakdown: dict                      # 사용자 수정 공종별 금액
+    work_items: Optional[list] = None
+    summary: Optional[str] = None
+    scanner_context: Optional[str] = None
+
+
 # ── 헬스체크 ─────────────────────────────────────────────
 
 @app.get("/")
@@ -70,30 +80,24 @@ def health():
 
 @app.post("/api/estimate")
 async def estimate(req: EstimateRequest):
-    """5 에이전트 파이프라인 실행"""
+    """5 에이전트 파이프라인 — Agent1~4 순차 / Agent5+Summary 병렬"""
 
-    # ── Agent 1: SCANNER (이미지 첨부 시) ──────────────
+    # ── 순차: Agent 1 → 2 → 3 → 4 (데이터 의존성) ──────
     scanner_context = ""
     if req.image_base64:
         scanner_context = await run_scanner(req.image_base64)
 
-    # ── Agent 2: ESTIMATOR ─────────────────────────────
     estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
     work_items: list[dict] = estimator_out.get("work_items", [])
 
-    # ── Agent 3: PRICER ────────────────────────────────
-    pricer_out = run_pricer(work_items)
+    pricer_out = await asyncio.to_thread(run_pricer, work_items)
     breakdown: dict[str, int] = pricer_out["breakdown"]
     min_cost: int = pricer_out["min_cost"]
     max_cost: int = pricer_out["max_cost"]
     subtotal: int = pricer_out["subtotal"]
     unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
 
-    # ── Agent 4: VALIDATOR ─────────────────────────────
     validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
-
-    # ── AI 요약 생성 (Haiku) ────────────────────────────
-    summary = _generate_summary(req.type, req.area, min_cost, max_cost)
 
     # ── 견적 데이터 조합 ───────────────────────────────
     estimate_data = {
@@ -104,7 +108,6 @@ async def estimate(req: EstimateRequest):
         "unit_price": unit_price,
         "breakdown": breakdown,
         "work_items": pricer_out.get("priced_items", []),
-        "summary": summary,
         "validator_flags": validator_out.get("flags", []),
         "expert_comment": validator_out.get("expert_comment", ""),
         "is_valid": validator_out.get("is_valid", True),
@@ -112,12 +115,15 @@ async def estimate(req: EstimateRequest):
         "scanner_context": scanner_context,
     }
 
-    # ── Agent 5: REPORTER (PDF) ────────────────────────
-    pdf_b64 = run_reporter(estimate_data)
+    # ── 병렬: Agent5 PDF + Excel + Summary 동시 실행 ───
+    summary, pdf_b64, excel_b64 = await asyncio.gather(
+        _generate_summary(req.type, req.area, min_cost, max_cost),
+        asyncio.to_thread(run_reporter, estimate_data),
+        asyncio.to_thread(run_reporter_excel, estimate_data),
+    )
+    estimate_data["summary"] = summary
     if pdf_b64:
         estimate_data["pdf_base64"] = pdf_b64
-
-    excel_b64 = run_reporter_excel(estimate_data)
     if excel_b64:
         estimate_data["excel_base64"] = excel_b64
 
@@ -134,22 +140,22 @@ async def estimate_stream(req: EstimateRequest):
         try:
             yield f"data: {json.dumps({'event': 'pipeline_start'})}\n\n"
 
-            # Agent 1: SCANNER
+            # ── 순차: Agent 1 SCANNER ──────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'SCANNER', 'step': 0})}\n\n"
             scanner_context = ""
             if req.image_base64:
                 scanner_context = await run_scanner(req.image_base64)
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'SCANNER', 'step': 0, 'data': {'scanner_context': scanner_context}})}\n\n"
 
-            # Agent 2: ESTIMATOR
+            # ── 순차: Agent 2 ESTIMATOR ────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'ESTIMATOR', 'step': 1})}\n\n"
             estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
             work_items: list[dict] = estimator_out.get("work_items", [])
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'ESTIMATOR', 'step': 1, 'data': {'work_items_count': len(work_items)}})}\n\n"
 
-            # Agent 3: PRICER
+            # ── 순차: Agent 3 PRICER ───────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'PRICER', 'step': 2})}\n\n"
-            pricer_out = run_pricer(work_items)
+            pricer_out = await asyncio.to_thread(run_pricer, work_items)
             breakdown: dict[str, int] = pricer_out["breakdown"]
             min_cost: int = pricer_out["min_cost"]
             max_cost: int = pricer_out["max_cost"]
@@ -157,14 +163,13 @@ async def estimate_stream(req: EstimateRequest):
             unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'PRICER', 'step': 2, 'data': {'min_cost': min_cost, 'max_cost': max_cost, 'breakdown': breakdown}})}\n\n"
 
-            # Agent 4: VALIDATOR
+            # ── 순차: Agent 4 VALIDATOR ────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'VALIDATOR', 'step': 3})}\n\n"
             validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'VALIDATOR', 'step': 3, 'data': {'flags_count': len(validator_out.get('flags', []))}})}\n\n"
 
-            # Agent 5: REPORTER
-            yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'REPORTER', 'step': 4})}\n\n"
-            summary = _generate_summary(req.type, req.area, min_cost, max_cost)
+            # ── 병렬: Agent 5 REPORTER + Summary 동시 실행 ─
+            yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'REPORTER', 'step': 4, 'parallel': True})}\n\n"
 
             estimate_data = {
                 "type": req.type,
@@ -174,7 +179,6 @@ async def estimate_stream(req: EstimateRequest):
                 "unit_price": unit_price,
                 "breakdown": breakdown,
                 "work_items": pricer_out.get("priced_items", []),
-                "summary": summary,
                 "validator_flags": validator_out.get("flags", []),
                 "expert_comment": validator_out.get("expert_comment", ""),
                 "is_valid": validator_out.get("is_valid", True),
@@ -182,11 +186,14 @@ async def estimate_stream(req: EstimateRequest):
                 "scanner_context": scanner_context,
             }
 
-            pdf_b64 = run_reporter(estimate_data)
+            summary, pdf_b64, excel_b64 = await asyncio.gather(
+                _generate_summary(req.type, req.area, min_cost, max_cost),
+                asyncio.to_thread(run_reporter, estimate_data),
+                asyncio.to_thread(run_reporter_excel, estimate_data),
+            )
+            estimate_data["summary"] = summary
             if pdf_b64:
                 estimate_data["pdf_base64"] = pdf_b64
-
-            excel_b64 = run_reporter_excel(estimate_data)
             if excel_b64:
                 estimate_data["excel_base64"] = excel_b64
 
@@ -204,9 +211,9 @@ async def estimate_stream(req: EstimateRequest):
 
 @app.post("/api/estimate/compare")
 async def estimate_compare(req: EstimateRequest):
-    """저가/표준/고급 3단계 비교 견적"""
+    """저가/표준/고급 3단계 비교 견적 — 3개 등급 asyncio.gather 병렬 실행"""
 
-    # SCANNER + ESTIMATOR는 공통 (한 번만 실행)
+    # ── 순차: SCANNER + ESTIMATOR (공통, 한 번만) ─────────
     scanner_context = ""
     if req.image_base64:
         scanner_context = await run_scanner(req.image_base64)
@@ -214,49 +221,105 @@ async def estimate_compare(req: EstimateRequest):
     estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
     work_items: list[dict] = estimator_out.get("work_items", [])
 
-    results: dict = {}
     tier_labels = {"budget": "저가", "standard": "표준", "premium": "고급"}
 
-    for tier in ["budget", "standard", "premium"]:
-        pricer_out = run_pricer(work_items, tier=tier)
+    # ── 병렬: 3개 등급 PRICER+VALIDATOR 동시 실행 ─────────
+    async def _run_tier(tier: str) -> tuple[str, dict]:
+        pricer_out = await asyncio.to_thread(run_pricer, work_items, tier)
         breakdown: dict[str, int] = pricer_out["breakdown"]
+        min_cost: int = pricer_out["min_cost"]
+        max_cost: int = pricer_out["max_cost"]
         subtotal: int = pricer_out["subtotal"]
         unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
-
-        results[tier] = {
+        validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
+        return tier, {
             "tier": tier,
             "tier_label": tier_labels[tier],
-            "min_cost": pricer_out["min_cost"],
-            "max_cost": pricer_out["max_cost"],
+            "min_cost": min_cost,
+            "max_cost": max_cost,
             "unit_price": unit_price,
             "breakdown": breakdown,
+            "validator_flags": validator_out.get("flags", []),
+            "is_valid": validator_out.get("is_valid", True),
         }
+
+    tier_results = await asyncio.gather(
+        _run_tier("budget"),
+        _run_tier("standard"),
+        _run_tier("premium"),
+    )
 
     return {
         "type": req.type,
         "area": req.area,
         "scanner_context": scanner_context,
-        "compare": results,
+        "compare": {tier: data for tier, data in tier_results},
     }
 
 
-def _generate_summary(type_: str, area: float, min_cost: int, max_cost: int) -> str:
-    try:
-        msg = _get_claude().messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=200,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"공사 유형: {type_}, 면적: {area}m², "
-                    f"견적: {min_cost:,}원~{max_cost:,}원. "
-                    f"전문적이고 간결한 2문장 요약:"
-                ),
-            }]
-        )
-        return msg.content[0].text.strip()
-    except Exception:
-        return (
-            f"{area}m² {type_} 공사 예상 비용은 {min_cost:,}원 ~ {max_cost:,}원입니다. "
-            f"현장 실측 후 최종 금액이 확정됩니다."
-        )
+# ── 단가 수동 조정 재계산 ───────────────────────────────────
+
+@app.post("/api/estimate/recalculate")
+async def recalculate(req: RecalculateRequest):
+    """사용자 수정 breakdown으로 VALIDATOR + REPORTER 재실행"""
+    subtotal = sum(req.breakdown.values())
+    min_cost = int(subtotal * 0.90)
+    max_cost = int(subtotal * 1.15)
+    unit_price = int(subtotal / req.area) if req.area > 0 else 0
+
+    validator_out = await run_validator(req.type, req.area, req.breakdown, min_cost, max_cost)
+
+    summary = req.summary or await _generate_summary(req.type, req.area, min_cost, max_cost)
+
+    estimate_data = {
+        "type": req.type,
+        "area": req.area,
+        "min_cost": min_cost,
+        "max_cost": max_cost,
+        "unit_price": unit_price,
+        "breakdown": req.breakdown,
+        "work_items": req.work_items or [],
+        "summary": summary,
+        "validator_flags": validator_out.get("flags", []),
+        "expert_comment": validator_out.get("expert_comment", ""),
+        "is_valid": validator_out.get("is_valid", True),
+        "rule_engine_version": validator_out.get("rule_engine_version", ""),
+        "scanner_context": req.scanner_context or "",
+    }
+
+    # ── 병렬: PDF + Excel 동시 생성 ──────────────────────
+    pdf_b64, excel_b64 = await asyncio.gather(
+        asyncio.to_thread(run_reporter, estimate_data),
+        asyncio.to_thread(run_reporter_excel, estimate_data),
+    )
+    if pdf_b64:
+        estimate_data["pdf_base64"] = pdf_b64
+    if excel_b64:
+        estimate_data["excel_base64"] = excel_b64
+
+    return estimate_data
+
+
+async def _generate_summary(type_: str, area: float, min_cost: int, max_cost: int) -> str:
+    """Haiku 요약 생성 — asyncio.to_thread로 이벤트 루프 비블로킹"""
+    def _sync_call() -> str:
+        try:
+            msg = _get_claude().messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=200,
+                messages=[{
+                    "role": "user",
+                    "content": (
+                        f"공사 유형: {type_}, 면적: {area}m², "
+                        f"견적: {min_cost:,}원~{max_cost:,}원. "
+                        f"전문적이고 간결한 2문장 요약:"
+                    ),
+                }]
+            )
+            return msg.content[0].text.strip()
+        except Exception:
+            return (
+                f"{area}m² {type_} 공사 예상 비용은 {min_cost:,}원 ~ {max_cost:,}원입니다. "
+                f"현장 실측 후 최종 금액이 확정됩니다."
+            )
+    return await asyncio.to_thread(_sync_call)

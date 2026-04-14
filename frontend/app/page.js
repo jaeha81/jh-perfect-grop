@@ -52,6 +52,10 @@ export default function Home() {
   const [compareResult, setCompareResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [editBreakdown, setEditBreakdown] = useState({});
+  const [editMode, setEditMode] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
+  const [dismissedFlags, setDismissedFlags] = useState(new Set());
   const fileRef = useRef();
 
   // 마운트 시 이력 로드
@@ -199,8 +203,54 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
 
-  // breakdown 합계
-  const total = result ? Object.values(result.breakdown || {}).reduce((a, b) => a + b, 0) : 0;
+  // 단가 수동 조정 — 편집 시작
+  function startEdit() {
+    setEditBreakdown({ ...result.breakdown });
+    setEditMode(true);
+  }
+
+  // 단가 수동 조정 — 재계산
+  async function recalculate() {
+    setRecalculating(true);
+    setError('');
+    try {
+      const res = await fetch('/api/estimate/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: result.type,
+          area: result.area,
+          breakdown: editBreakdown,
+          work_items: result.work_items,
+          summary: result.summary,
+          scanner_context: result.scanner_context,
+        }),
+      });
+      if (!res.ok) throw new Error(`서버 오류: ${res.status}`);
+      const data = await res.json();
+      setResult(data);
+      setEditMode(false);
+      setDismissedFlags(new Set());
+      setHistory(saveToHistory(data));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRecalculating(false);
+    }
+  }
+
+  // VALIDATOR 플래그 무시
+  function toggleDismissFlag(i) {
+    setDismissedFlags(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  // breakdown 합계 (editMode면 editBreakdown 기준)
+  const activeBreakdown = editMode ? editBreakdown : (result?.breakdown || {});
+  const total = Object.values(activeBreakdown).reduce((a, b) => a + b, 0);
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 sm:px-8 py-8 bg-[#0a0a0f]">
@@ -429,17 +479,62 @@ export default function Home() {
                 {result.area}m² · {result.type} · 기준단가 {fmt(result.unit_price)}/m²
               </div>
 
-              {/* breakdown 바 차트 */}
-              <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-[0.8rem]">공종별 내역</div>
-              {Object.entries(result.breakdown || {}).map(([k, v]) => {
+              {/* breakdown 바 차트 + 단가 수동 조정 */}
+              <div className="flex items-center justify-between mb-[0.8rem]">
+                <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase">공종별 내역</div>
+                {!editMode ? (
+                  <button
+                    type="button"
+                    onClick={startEdit}
+                    className="text-[0.75rem] px-3 py-1 rounded-lg font-semibold transition-colors duration-150"
+                    style={{ background: 'rgba(124,106,247,0.12)', border: '1px solid rgba(124,106,247,0.3)', color: '#a78bfa', cursor: 'pointer' }}
+                  >
+                    ✎ 단가 수정
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={recalculate}
+                      disabled={recalculating}
+                      className="text-[0.75rem] px-3 py-1 rounded-lg font-semibold transition-colors duration-150"
+                      style={{ background: 'rgba(34,211,160,0.15)', border: '1px solid rgba(34,211,160,0.4)', color: '#22d3a0', cursor: recalculating ? 'not-allowed' : 'pointer', opacity: recalculating ? 0.6 : 1 }}
+                    >
+                      {recalculating ? '재계산 중...' : '↻ 재계산'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(false)}
+                      disabled={recalculating}
+                      className="text-[0.75rem] px-3 py-1 rounded-lg font-semibold"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#555', cursor: 'pointer' }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                )}
+              </div>
+              {Object.entries(activeBreakdown).map(([k, v]) => {
                 const pct = total > 0 ? Math.round(v / total * 100) : 0;
                 return (
                   <div key={k} className="mb-[0.55rem]">
-                    <div className="flex justify-between mb-[0.2rem]">
+                    <div className="flex justify-between mb-[0.2rem] items-center">
                       <span className="text-xs sm:text-sm text-[#8b8a9e]">{k}</span>
-                      <span className="text-xs sm:text-sm text-[#c4c2d8] font-semibold">
-                        {fmt(v)} <span className="text-[#444] font-normal">({pct}%)</span>
-                      </span>
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="10000"
+                          value={v}
+                          onChange={e => setEditBreakdown(prev => ({ ...prev, [k]: parseInt(e.target.value) || 0 }))}
+                          className="text-xs sm:text-sm font-semibold text-right rounded px-2 py-0.5 w-[120px]"
+                          style={{ background: 'rgba(124,106,247,0.1)', border: '1px solid rgba(124,106,247,0.4)', color: '#c4c2d8', outline: 'none' }}
+                        />
+                      ) : (
+                        <span className="text-xs sm:text-sm text-[#c4c2d8] font-semibold">
+                          {fmt(v)} <span className="text-[#444] font-normal">({pct}%)</span>
+                        </span>
+                      )}
                     </div>
                     <div className="h-[6px] bg-white/[0.06] rounded overflow-hidden">
                       <div
@@ -450,6 +545,12 @@ export default function Home() {
                   </div>
                 );
               })}
+              {editMode && (
+                <div className="mt-2 pt-2 border-t border-white/[0.06] flex justify-between text-[0.82rem]">
+                  <span className="text-[#8b8a9e]">수정 후 합계</span>
+                  <span className="font-bold text-[#a78bfa]">{total.toLocaleString('ko-KR')}원</span>
+                </div>
+              )}
 
               {result.summary && (
                 <p className="text-[#8b8a9e] text-[0.88rem] leading-[1.65] mt-4 pt-4 border-t border-white/[0.06]">
@@ -483,30 +584,69 @@ export default function Home() {
               <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
                 <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">VALIDATOR — 18년 현장 검증</div>
 
-                {result.validator_flags?.map((flag, i) => (
+                {/* is_valid === false 경고 배너 */}
+                {result.is_valid === false && (
                   <div
-                    key={i}
-                    className="flex gap-[0.6rem] items-start px-[0.9rem] py-[0.7rem] rounded-lg mb-[0.6rem]"
-                    style={{
-                      background: flag.severity === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-                      border: `1px solid ${flag.severity === 'error' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
-                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5"
+                    style={{ background: 'rgba(239,68,68,0.12)', border: '1.5px solid rgba(239,68,68,0.4)' }}
                   >
-                    <span
-                      className="px-[0.5rem] py-[0.15rem] rounded text-[0.72rem] font-bold whitespace-nowrap"
-                      style={{
-                        background: flag.severity === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                        color: flag.severity === 'error' ? '#f87171' : '#fbbf24',
-                      }}
-                    >
-                      {flag.severity === 'error' ? '오류' : '주의'}
-                    </span>
-                    <div className="flex-1">
-                      <div className="text-[#c4c2d8] text-[0.84rem] mb-[0.2rem]">[{flag.category}] {flag.message}</div>
-                      <div className="text-[#6b6a80] text-[0.78rem]">→ {flag.suggestion}</div>
+                    <span className="text-xl">🚨</span>
+                    <div>
+                      <div className="text-[#f87171] text-[0.88rem] font-bold">견적 검증 실패 — 현장 기준 미충족</div>
+                      <div className="text-[#f87171]/70 text-[0.78rem] mt-0.5">아래 플래그를 검토하고 단가를 수정하거나 전문가 상담을 권장합니다.</div>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {result.validator_flags?.map((flag, i) => {
+                  const dismissed = dismissedFlags.has(i);
+                  // 키워드 기반 위험도 판별
+                  const dangerKeywords = ['저가 의심', '누락 의심', '품질 위험'];
+                  const isDanger = dangerKeywords.some(kw => flag.message?.includes(kw) || flag.category?.includes(kw));
+                  const isError = flag.severity === 'error' || isDanger;
+                  // 뱃지 아이콘 및 라벨
+                  const badgeIcon = dismissed ? '' : isError ? '🚨' : '⚠️';
+                  const badgeLabel = dismissed ? '무시됨' : isError ? '위험' : '주의';
+                  return (
+                    <div
+                      key={i}
+                      className="flex gap-[0.6rem] items-start px-[0.9rem] py-[0.7rem] rounded-lg mb-[0.6rem] transition-opacity duration-200"
+                      style={{
+                        background: dismissed ? 'rgba(255,255,255,0.02)' : isError ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                        border: `1px solid ${dismissed ? 'rgba(255,255,255,0.06)' : isError ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                        opacity: dismissed ? 0.45 : 1,
+                      }}
+                    >
+                      <span
+                        className="px-[0.5rem] py-[0.15rem] rounded text-[0.72rem] font-bold whitespace-nowrap"
+                        style={{
+                          background: dismissed ? 'rgba(255,255,255,0.06)' : isError ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                          color: dismissed ? '#555' : isError ? '#f87171' : '#fbbf24',
+                        }}
+                      >
+                        {badgeIcon} {badgeLabel}
+                      </span>
+                      <div className="flex-1">
+                        <div
+                          className="text-[0.84rem] mb-[0.2rem]"
+                          style={{ color: isDanger ? '#f87171' : '#c4c2d8' }}
+                        >
+                          [{flag.category}] {flag.message}
+                        </div>
+                        {!dismissed && <div className="text-[#6b6a80] text-[0.78rem]">→ {flag.suggestion}</div>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleDismissFlag(i)}
+                        className="text-[0.72rem] px-2 py-0.5 rounded whitespace-nowrap self-center"
+                        style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#555', cursor: 'pointer' }}
+                        title={dismissed ? '다시 표시' : '무시'}
+                      >
+                        {dismissed ? '↺' : '✕ 무시'}
+                      </button>
+                    </div>
+                  );
+                })}
 
                 {result.expert_comment && (
                   <div className="bg-[rgba(34,211,160,0.05)] border border-[rgba(34,211,160,0.2)] rounded-[10px] px-5 py-4">
