@@ -3,6 +3,18 @@
 > 2026 전국민 AI 챔피언 대회 출품작  
 > **"교수님 AI가 아닌, 현장의 AI"**
 
+[![Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://jh-perfect-grop.vercel.app)
+[![Railway](https://img.shields.io/badge/Backend-Railway-blueviolet?logo=railway)](https://jh-perfect-grop-backend.up.railway.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## 핵심 차별화 3가지
+
+1. **현장 데이터 내재화** — 18년 시공 현장 경험이 37개 Python 룰로 명시 구현. AI 프롬프트 의존 없음.
+2. **멀티에이전트 오케스트레이션** — SCANNER→ESTIMATOR→PRICER→VALIDATOR→REPORTER 5단계 실시간 SSE 스트리밍.
+3. **즉시 수익화 구조** — B2C(구독)/B2B(SaaS)/B2G(API) 3채널 동시 대응. 추가 개발 없이 상용 전환 가능.
+
 ---
 
 ## 왜 이 프로젝트인가

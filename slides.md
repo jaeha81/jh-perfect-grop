@@ -120,6 +120,22 @@ B2G: 공공 조달 시스템 연동 (API 라이선스)
 
 ---
 
+## Slide 7-B — 창의성: 왜 이 접근법이 새로운가
+
+### "룰을 코드로 쓴다" — 업계 최초 현장 룰셋 명시 구현
+
+| 기존 AI 견적 | JH EstimateAI |
+| ----------- | ------------- |
+| 프롬프트: "전문가처럼 견적해줘" | Python 코드: `if 욕실 and not 방수 → error` |
+| 매번 다른 결과 (비결정적) | 동일 입력 → 동일 판정 (결정적) |
+| 이상치 탐지 불가 | 37개 룰 기반 이상치 즉시 플래그 |
+| 현장 경험 없음 | 18년 시공 현장 데이터 내재화 |
+
+**창의적 핵심**: AI와 도메인 전문성의 결합 방식을 역전시켰다.  
+AI가 전문가를 흉내내는 게 아니라, **전문가의 판단 기준이 코드로 고착화**되고 AI는 언어 처리에 집중한다.
+
+---
+
 ## Slide 8 — 로드맵
 
 | 단계 | 기간 | 내용 |
@@ -131,7 +147,17 @@ B2G: 공공 조달 시스템 연동 (API 라이선스)
 
 ---
 
-## Slide 9 — 마무리
+## Slide 9 — 심사 기준별 요약
+
+| 심사 항목 | 근거 | 증거 |
+| --------- | ---- | ---- |
+| **창의성** | 도메인 룰을 AI 프롬프트가 아닌 Python 코드로 명시 구현 | `validator.py` 37개 룰 직접 시연 |
+| **기술 완성도** | 5 에이전트 파이프라인 → SSE 실시간 스트리밍 → PDF 출력까지 엔드투엔드 작동 | 라이브 데모 |
+| **시장성** | B2C/B2B/B2G 3채널, 국내 건설/인테리어 시장 120조원 TAM | 수익화 모델 슬라이드 |
+
+---
+
+## Slide 10 — 마무리
 
 ### "18년이 만든 AI는 다릅니다"
 
@@ -142,4 +168,4 @@ B2G: 공공 조달 시스템 연동 (API 라이선스)
 
 **감사합니다.**
 
-> 데모: [github.com/jaeha81/jh-perfect-grop](https://github.com/jaeha81/jh-perfect-grop) | GitHub: [jaeha81/jh-perfect-grop](https://github.com/jaeha81/jh-perfect-grop)
+> 데모: [jh-perfect-grop.vercel.app](https://jh-perfect-grop.vercel.app) | GitHub: [jaeha81/jh-perfect-grop](https://github.com/jaeha81/jh-perfect-grop)

@@ -57,6 +57,13 @@
     ]
   },
 
+  "presentation_talking_points": [
+    "18년 현장 경력 기반 VALIDATOR — 교수님 AI가 아닌 현장의 AI",
+    "5개 멀티 에이전트 오케스트레이션 실시간 SSE 스트리밍",
+    "저가/표준/고급 3단계 비교견적으로 B2C 즉시 활용",
+    "96개 공종 키워드 커버 — 세부 공사별 정확한 수량 산출"
+  ],
+
   "demo_script": {
     "total_time": "5분",
     "steps": [
