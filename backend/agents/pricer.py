@@ -1,10 +1,4 @@
 """Agent 3: PRICER — 단가 DB 조회 + 금액 산출 (Supabase / JSON fallback)"""
-import sys
-from pathlib import Path
-
-# db 모듈 경로 추가
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from db.supabase_prices import get_prices_supabase
 
 

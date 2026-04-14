@@ -130,6 +130,208 @@ def run_test(case: dict, client: httpx.Client) -> bool:
         return False
 
 
+# --- TC-05: compare endpoint ----------------------------------------
+
+def run_test_compare(client):
+    # TC-05: /api/estimate/compare 3단계 비교 견적 검증
+    print()
+    print("-" * 60)
+    print("▶ TC-05  compare 엔드포인트 (저가/표준/고급)")
+
+    payload = {
+        "type": "인테리어",
+        "area": 99.0,
+        "description": "아파트 전체 인테리어. 강마루, 실크도배, 욕실 2개 교체, 전기공사.",
+    }
+
+    try:
+        t0 = time.time()
+        resp = client.post(f"{BASE}/api/estimate/compare", json=payload, timeout=120.0)
+        elapsed = round(time.time() - t0, 1)
+
+        if resp.status_code != 200:
+            print(f"  X HTTP {resp.status_code}: {resp.text[:200]}")
+            return False
+
+        data = resp.json()
+
+        if "compare" not in data:
+            print("  X compare 키 없음")
+            return False
+
+        compare = data["compare"]
+        missing_tiers = [t for t in ("budget", "standard", "premium") if t not in compare]
+        if missing_tiers:
+            print(f"  X 누락된 tier: {missing_tiers}")
+            return False
+
+        b = compare["budget"]["min_cost"]
+        s = compare["standard"]["min_cost"]
+        p = compare["premium"]["min_cost"]
+        if not (b < s < p):
+            print(f"  X 단가 순서 오류: budget={fmt_krw(b)}, standard={fmt_krw(s)}, premium={fmt_krw(p)}")
+            return False
+
+        for tier_key, tier_data in compare.items():
+            for field in ("min_cost", "max_cost", "unit_price", "breakdown", "is_valid"):
+                if field not in tier_data:
+                    print(f"  X {tier_key} 에 {field} 누락")
+                    return False
+
+        print(f"  v {elapsed}s  |  3단계 비교 완료")
+        print(f"    저가: {fmt_krw(b)} ~ {fmt_krw(compare['budget']['max_cost'])}")
+        print(f"    표준: {fmt_krw(s)} ~ {fmt_krw(compare['standard']['max_cost'])}")
+        print(f"    고급: {fmt_krw(p)} ~ {fmt_krw(compare['premium']['max_cost'])}")
+        return True
+
+    except httpx.ConnectError:
+        print("  X 연결 실패")
+        return False
+    except Exception as e:
+        print(f"  X 오류: {e}")
+        return False
+
+
+# --- TC-06: stream endpoint ------------------------------------------
+
+def run_test_stream(client):
+    # TC-06: /api/estimate/stream SSE 이벤트 순서 및 complete 이벤트 검증
+    print()
+    print("-" * 60)
+    print("▶ TC-06  stream 엔드포인트 (SSE 이벤트 검증)")
+
+    payload = {
+        "type": "리모델링",
+        "area": 99.0,
+        "description": "아파트 전체 리모델링. 철거 포함, 강마루, 실크도배, 욕실 1개 교체.",
+    }
+
+    EXPECTED_AGENTS = {"SCANNER", "ESTIMATOR", "PRICER", "VALIDATOR", "REPORTER"}
+
+    try:
+        t0 = time.time()
+        with client.stream("POST", f"{BASE}/api/estimate/stream", json=payload, timeout=120.0) as resp:
+            if resp.status_code != 200:
+                print(f"  X HTTP {resp.status_code}")
+                return False
+
+            events = []
+            last_data = None
+
+            for line in resp.iter_lines():
+                if line.startswith("data: "):
+                    raw = line[6:]
+                    try:
+                        evt = json.loads(raw)
+                        events.append(evt)
+                        if evt.get("event") == "complete":
+                            last_data = evt.get("data", {})
+                    except json.JSONDecodeError:
+                        print(f"  X JSON 파싱 실패: {raw[:80]}")
+                        return False
+
+        elapsed = round(time.time() - t0, 1)
+
+        error_events = [e for e in events if e.get("event") == "error"]
+        if error_events:
+            print(f"  X 에러 이벤트 수신: {error_events[0].get('message', '')}")
+            return False
+
+        done_agents = {e["agent"] for e in events if e.get("event") == "agent_done"}
+        missing_agents = EXPECTED_AGENTS - done_agents
+        if missing_agents:
+            print(f"  X agent_done 미수신: {missing_agents}")
+            return False
+
+        if last_data is None:
+            print("  X complete 이벤트 없음")
+            return False
+
+        for field in ("min_cost", "max_cost", "breakdown", "validator_flags"):
+            if field not in last_data:
+                print(f"  X complete.data 에 {field} 누락")
+                return False
+
+        print(f"  v {elapsed}s  |  {len(events)}개 이벤트  |  에이전트: {sorted(done_agents)}")
+        print(f"    최종 견적: {fmt_krw(last_data['min_cost'])} ~ {fmt_krw(last_data['max_cost'])}")
+        return True
+
+    except httpx.ConnectError:
+        print("  X 연결 실패")
+        return False
+    except Exception as e:
+        print(f"  X 오류: {e}")
+        return False
+
+
+# --- TC-07: VALIDATOR flags 직접 검증 --------------------------------
+
+def run_test_validator_flags(client):
+    # TC-07: 욕실 방수 누락(R11/R28) + 철거 누락(R09) 플래그 발동 검증
+    print()
+    print("-" * 60)
+    print("▶ TC-07  VALIDATOR flags 규칙 발동 검증")
+
+    payload = {
+        "type": "리모델링",
+        "area": 66.0,
+        "description": "욕실 타일 교체만. 방수 없음, 철거 없음.",
+    }
+
+    try:
+        resp = client.post(f"{BASE}/api/estimate", json=payload, timeout=60.0)
+        if resp.status_code != 200:
+            print(f"  X HTTP {resp.status_code}")
+            return False
+
+        data = resp.json()
+        flags = data.get("validator_flags", [])
+        rule_ids = {f.get("rule_id") for f in flags}
+
+        passed = True
+
+        if "R09" not in rule_ids:
+            print("  X R09 (리모델링 철거 누락) 미발동")
+            passed = False
+        else:
+            r09 = next(f for f in flags if f.get("rule_id") == "R09")
+            if r09.get("severity") != "error":
+                print(f"  X R09 severity 오류: {r09.get('severity')} (기대: error)")
+                passed = False
+            else:
+                print("    v R09 (철거 누락) error 정상 발동")
+
+        bath_waterproof_rules = rule_ids & {"R11", "R28"}
+        if not bath_waterproof_rules:
+            print("  X R11/R28 (욕실 방수 누락) 미발동")
+            passed = False
+        else:
+            print(f"    v 욕실 방수 누락 플래그 발동: {bath_waterproof_rules}")
+
+        if data.get("is_valid") is not False:
+            print(f"  X is_valid={data.get('is_valid')} (error 플래그 있으므로 False 기대)")
+            passed = False
+        else:
+            print("    v is_valid=False 정상")
+
+        for flag in flags[:3]:
+            for field in ("severity", "category", "rule_id", "message", "suggestion"):
+                if field not in flag:
+                    print(f"  X flag 구조 누락: {field}")
+                    passed = False
+
+        if passed:
+            print(f"  v 총 {len(flags)}개 플래그 | rule_ids={sorted(rule_ids)}")
+        return passed
+
+    except httpx.ConnectError:
+        print("  X 연결 실패")
+        return False
+    except Exception as e:
+        print(f"  X 오류: {e}")
+        return False
+
+
 def main():
     print("=" * 60)
     print("JH EstimateAI API 통합 테스트")
@@ -156,11 +358,25 @@ def main():
     with httpx.Client() as client:
         results = [run_test(c, client) for c in CASES]
 
+    # 추가 테스트: compare / stream / validator flags
+    print()
+    print("=" * 60)
+    print("추가 엔드포인트 테스트")
+    with httpx.Client() as client:
+        extra_results = [
+            run_test_compare(client),
+            run_test_stream(client),
+            run_test_validator_flags(client),
+        ]
+    results = results + extra_results
+
     # 요약
     passed = sum(results)
     total = len(results)
-    print(f"\n{'=' * 60}")
-    print(f"결과: {passed}/{total} 통과  {'✓ ALL PASS' if passed == total else '✗ 일부 실패'}")
+    print()
+    print("=" * 60)
+    status = "ALL PASS" if passed == total else "일부 실패"
+    print("결과: " + str(passed) + "/" + str(total) + " 통과  [" + status + "]")
 
 
 if __name__ == "__main__":

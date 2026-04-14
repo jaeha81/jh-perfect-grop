@@ -218,12 +218,22 @@ async def estimate_stream(req: EstimateRequest):
                 "scanner_context": scanner_context,
             }
 
-            summary, pdf_result, excel_b64 = await asyncio.gather(
-                _generate_summary(req.type, req.area, min_cost, max_cost),
+            _gather3 = await asyncio.gather(
+                _generate_summary_async(req.type, req.area, min_cost, max_cost),
                 asyncio.to_thread(_run_reporter_safe, estimate_data),
                 asyncio.to_thread(run_reporter_excel, estimate_data),
+                return_exceptions=True,
             )
-            pdf_b64, pdf_error = pdf_result
+            summary = (
+                _gather3[0] if not isinstance(_gather3[0], Exception)
+                else f"{req.area}m² {req.type} 공사 견적이 완료되었습니다."
+            )
+            _pdf_res = _gather3[1] if not isinstance(_gather3[1], Exception) else None
+            excel_b64 = _gather3[2] if not isinstance(_gather3[2], Exception) else None
+            if _pdf_res is not None:
+                pdf_b64, pdf_error = _pdf_res
+            else:
+                pdf_b64, pdf_error = None, str(_gather3[1]) if isinstance(_gather3[1], Exception) else None
             estimate_data["summary"] = summary
             estimate_data["pdf_base64"] = pdf_b64 or None
             estimate_data["excel_base64"] = excel_b64 or None
@@ -280,7 +290,9 @@ async def estimate_compare(req: EstimateRequest):
         _run_tier("budget"),
         _run_tier("standard"),
         _run_tier("premium"),
+        return_exceptions=True,
     )
+    tier_results = [r for r in tier_results if not isinstance(r, Exception)]
 
     return {
         "type": req.type,
@@ -302,7 +314,7 @@ async def recalculate(req: RecalculateRequest):
 
     validator_out = await run_validator(req.type, req.area, req.breakdown, min_cost, max_cost)
 
-    summary = req.summary or await _generate_summary(req.type, req.area, min_cost, max_cost)
+    summary = req.summary or await _generate_summary_async(req.type, req.area, min_cost, max_cost)
 
     estimate_data = {
         "type": req.type,
@@ -321,11 +333,17 @@ async def recalculate(req: RecalculateRequest):
     }
 
     # ── 병렬: PDF + Excel 동시 생성 ──────────────────────
-    pdf_result, excel_result = await asyncio.gather(
+    _gather4 = await asyncio.gather(
         asyncio.to_thread(_run_reporter_safe, estimate_data),
         asyncio.to_thread(run_reporter_excel, estimate_data),
+        return_exceptions=True,
     )
-    pdf_b64, pdf_error = pdf_result
+    _pdf_res4 = _gather4[0] if not isinstance(_gather4[0], Exception) else None
+    excel_result = _gather4[1] if not isinstance(_gather4[1], Exception) else None
+    if _pdf_res4 is not None:
+        pdf_b64, pdf_error = _pdf_res4
+    else:
+        pdf_b64, pdf_error = None, str(_gather4[0]) if isinstance(_gather4[0], Exception) else None
     estimate_data["pdf_base64"] = pdf_b64 or None
     estimate_data["excel_base64"] = excel_result or None
     if pdf_error:
@@ -347,7 +365,7 @@ def _run_reporter_safe(estimate_data: dict) -> tuple[str | None, str | None]:
         return None, traceback.format_exc()
 
 
-async def _generate_summary(type_: str, area: float, min_cost: int, max_cost: int) -> str:
+async def _generate_summary_async(type_: str, area: float, min_cost: int, max_cost: int) -> str:
     """Haiku 요약 생성 — asyncio.to_thread로 이벤트 루프 비블로킹"""
     def _sync_call() -> str:
         try:

@@ -133,7 +133,10 @@ export default function Home() {
             const parsed = JSON.parse(dataLine.slice(5).trim());
             const { event, agent, step, data } = parsed;
 
-            if (event === 'agent_start') {
+            if (event === 'pipeline_start') {
+              setActiveStep(0);
+              setDoneSteps([]);
+            } else if (event === 'agent_start') {
               setActiveStep(step);
               if (parsed.parallel) setParallelSteps(prev => new Set([...prev, step]));
             } else if (event === 'agent_done') {
@@ -148,7 +151,7 @@ export default function Home() {
               throw new Error(parsed.message);
             }
           } catch (parseErr) {
-            // JSON 파싱 오류는 무시 (불완전한 청크일 수 있음)
+            console.warn('[SSE] JSON parse failed:', line, parseErr);
           }
         }
       }
@@ -162,7 +165,7 @@ export default function Home() {
 
   async function submitCompare(e) {
     e.preventDefault();
-    if (!form.area || !form.description) return;
+    if (parseFloat(form.area) <= 0 || !form.description.trim()) return;
     setError(''); setCompareResult(null); setLoading(true);
     setActiveStep(0); setDoneSteps([]); setParallelSteps(new Set([2, 3]));
 
@@ -200,7 +203,9 @@ export default function Home() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `JH견적서_${result.type}_${result.area}m².pdf`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
@@ -212,7 +217,9 @@ export default function Home() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `JH견적서_${result.type}_${result.area}m².xlsx`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
@@ -301,7 +308,7 @@ export default function Home() {
                   key={h.id}
                   className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
-                  onClick={() => { setResult(h); setShowHistory(false); setDoneSteps([0,1,2,3,4]); }}
+                  onClick={() => { setResult(h); setShowHistory(false); setDoneSteps([0,1,2,3,4]); setCompareResult(null); }}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-[0.75rem] px-2 py-0.5 rounded" style={{ background: 'rgba(124,106,247,0.15)', color: '#a78bfa' }}>{h.type}</span>
@@ -721,10 +728,10 @@ export default function Home() {
               {Object.values(compareResult.compare || {}).map((tier) => (
                 <div key={tier.tier} className="rounded-xl p-4 text-center" style={{
                   background: tier.tier === 'standard' ? 'rgba(124,106,247,0.1)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${tier.tier === 'standard' ? 'rgba(124,106,247,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                  border: `1px solid ${tier.is_valid === false ? 'rgba(239,68,68,0.4)' : tier.tier === 'standard' ? 'rgba(124,106,247,0.3)' : 'rgba(255,255,255,0.07)'}`,
                 }}>
                   <div className="text-[0.75rem] font-bold mb-2" style={{ color: tier.tier === 'premium' ? '#fbbf24' : tier.tier === 'standard' ? '#a78bfa' : '#6b6a80' }}>
-                    {tier.tier_label}
+                    {tier.is_valid === false && <span className="mr-1">⚠️</span>}{tier.tier_label}
                   </div>
                   <div className="text-[1rem] font-bold" style={{ color: '#e8e6f0' }}>
                     {tier.min_cost?.toLocaleString('ko-KR')}원
@@ -735,6 +742,11 @@ export default function Home() {
                   <div className="text-[0.72rem] mt-1" style={{ color: '#6b6a80' }}>
                     {tier.unit_price?.toLocaleString('ko-KR')}원/m²
                   </div>
+                  {tier.validator_flags?.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-white/[0.06] text-[0.7rem]" style={{ color: '#fbbf24' }}>
+                      검증 경고 {tier.validator_flags.length}건
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

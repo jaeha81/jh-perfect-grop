@@ -380,16 +380,6 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
 
     # ── [카테고리 4] 욕실 기준 — 5개 룰 ────────────────────────────────────────
 
-    # R28: 욕실 방수 처리 명시 없음
-    if has_bathroom and not _has_category(breakdown, "방수"):
-        flags.append({
-            "severity": "error",
-            "category": "욕실",
-            "rule_id": "R28",
-            "message": "욕실 공사에 방수 처리 항목이 없습니다",
-            "suggestion": "욕실 바닥·벽 방수는 누수 방지를 위한 필수 공정입니다. 우레탄·시트방수를 추가하세요.",
-        })
-
     # R29: 위생도기 없는 욕실
     has_sanitary = (_has_category(breakdown, "양변기")
                     or _has_category(breakdown, "세면대")
