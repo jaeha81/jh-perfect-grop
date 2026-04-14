@@ -446,19 +446,6 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
             "suggestion": "싱크대·상하부장 포함 여부를 확인하세요. 별도 공급이라면 계약서에 명시하세요.",
         })
 
-    # R33: 싱크대 교체 시 후드 없음 (R14와 중복 방지 — R14가 미발동된 경우에만 체크)
-    # R14는 has_sink_item 기준, R33은 정확히 싱크대 키워드가 있는 경우
-    # has_sink_item이 True면 R14가 이미 체크했으므로 R33은 패스
-    has_sink = _has_category(breakdown, "싱크") or _has_category(breakdown, "씽크")
-    if has_sink and not has_hood and not has_sink_item:
-        # has_sink_item = has_sink이므로 이 분기는 사실상 실행되지 않음 (안전망)
-        flags.append({
-            "severity": "warning",
-            "category": "주방",
-            "rule_id": "R33",
-            "message": "싱크대 공사에 후드(환기) 항목이 없습니다",
-            "suggestion": "싱크대 교체 시 주방 후드도 함께 교체하는 것이 표준입니다.",
-        })
 
     # R34: 주방 리모델링 타일 없음
     kitchen_tile = (_has_category(breakdown, "주방타일")
