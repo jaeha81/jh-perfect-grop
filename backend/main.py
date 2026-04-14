@@ -97,7 +97,11 @@ async def estimate(req: EstimateRequest):
     subtotal: int = pricer_out["subtotal"]
     unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
 
-    validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
+    # ── 병렬: VALIDATOR + Summary 동시 실행 (PRICER 완료 후) ──
+    validator_out, summary = await asyncio.gather(
+        run_validator(req.type, req.area, breakdown, min_cost, max_cost),
+        _generate_summary(req.type, req.area, min_cost, max_cost),
+    )
 
     # ── 견적 데이터 조합 ───────────────────────────────
     estimate_data = {
@@ -108,6 +112,7 @@ async def estimate(req: EstimateRequest):
         "unit_price": unit_price,
         "breakdown": breakdown,
         "work_items": pricer_out.get("priced_items", []),
+        "summary": summary,
         "validator_flags": validator_out.get("flags", []),
         "expert_comment": validator_out.get("expert_comment", ""),
         "is_valid": validator_out.get("is_valid", True),
@@ -115,13 +120,11 @@ async def estimate(req: EstimateRequest):
         "scanner_context": scanner_context,
     }
 
-    # ── 병렬: Agent5 PDF + Excel + Summary 동시 실행 ───
-    summary, pdf_b64, excel_b64 = await asyncio.gather(
-        _generate_summary(req.type, req.area, min_cost, max_cost),
+    # ── 병렬: Agent5 PDF + Excel 동시 생성 ────────────
+    pdf_b64, excel_b64 = await asyncio.gather(
         asyncio.to_thread(run_reporter, estimate_data),
         asyncio.to_thread(run_reporter_excel, estimate_data),
     )
-    estimate_data["summary"] = summary
     if pdf_b64:
         estimate_data["pdf_base64"] = pdf_b64
     if excel_b64:
