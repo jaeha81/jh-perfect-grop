@@ -17,6 +17,7 @@
 | [api-spec.md](api-spec.md) | API 엔드포인트 명세 | ✅ 완료 |
 | [cross-project-analysis.md](cross-project-analysis.md) | 견적시스템 교차 분석 + 보완 계획 | ✅ 2026-04-12 |
 | [future-upgrades.md](future-upgrades.md) | 대회 이후 업그레이드 로드맵 | ✅ 2026-04-12 |
+| [deployment.md](deployment.md) | Vercel+Railway 배포 구조 + 체크리스트 | ✅ 2026-04-14 |
 
 ## 조회 가이드
 
@@ -28,3 +29,4 @@
 | API 연동 방법이 궁금할 때 | api-spec.md |
 | 두 프로젝트 관계가 궁금할 때 | cross-project-analysis.md |
 | 대회 이후 계획이 궁금할 때 | future-upgrades.md |
+| 배포 방법이 궁금할 때 | deployment.md |

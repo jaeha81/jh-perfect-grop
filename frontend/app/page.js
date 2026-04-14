@@ -40,22 +40,10 @@ export default function Home() {
     reader.readAsDataURL(file);
   }
 
-  // 에이전트 단계별 진행 시뮬레이션
-  async function simulatePipeline(fetchPromise) {
-    const delays = [300, 1200, 600, 1500, 800]; // 각 에이전트 예상 소요
-    let elapsed = 0;
-    for (let i = 0; i < AGENTS.length; i++) {
-      await new Promise(r => setTimeout(r, elapsed === 0 ? 200 : delays[i - 1]));
-      setActiveStep(i);
-      elapsed += delays[i];
-    }
-    return fetchPromise;
-  }
-
   async function submit(e) {
     e.preventDefault();
     setError(''); setResult(null); setLoading(true);
-    setActiveStep(0); setDoneSteps([]);
+    setActiveStep(-1); setDoneSteps([]);
 
     const body = {
       ...form,
@@ -64,33 +52,52 @@ export default function Home() {
     };
 
     try {
-      const fetchP = fetch('/api/estimate', {
+      const res = await fetch('/api/estimate/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
-      // 파이프라인 진행 표시 (비동기)
-      let stepIdx = 0;
-      const stepTimer = setInterval(() => {
-        if (stepIdx < AGENTS.length) {
-          setActiveStep(stepIdx);
-          setDoneSteps(prev => stepIdx > 0 ? [...prev, stepIdx - 1] : prev);
-          stepIdx++;
-        }
-      }, 900);
-
-      const res = await fetchP;
-      clearInterval(stepTimer);
-
       if (!res.ok) throw new Error(`서버 오류: ${res.status}`);
-      const data = await res.json();
 
-      setDoneSteps([0, 1, 2, 3, 4]);
-      setActiveStep(-1);
-      setResult(data);
-    } catch (e) {
-      setError(e.message);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const dataLine = line.trim();
+          if (!dataLine.startsWith('data:')) continue;
+          try {
+            const parsed = JSON.parse(dataLine.slice(5).trim());
+            const { event, agent, step, data } = parsed;
+
+            if (event === 'agent_start') {
+              setActiveStep(step);
+            } else if (event === 'agent_done') {
+              setDoneSteps(prev => [...new Set([...prev, step])]);
+              setActiveStep(step + 1 < AGENTS.length ? step + 1 : -1);
+            } else if (event === 'complete') {
+              setDoneSteps([0, 1, 2, 3, 4]);
+              setActiveStep(-1);
+              setResult(data);
+            } else if (event === 'error') {
+              throw new Error(parsed.message);
+            }
+          } catch (parseErr) {
+            // JSON 파싱 오류는 무시 (불완전한 청크일 수 있음)
+          }
+        }
+      }
+    } catch (err) {
+      setError(err.message);
       setActiveStep(-1);
     } finally {
       setLoading(false);
@@ -125,8 +132,8 @@ export default function Home() {
   const total = result ? Object.values(result.breakdown || {}).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-8 py-8 bg-[#0a0a0f]">
-      <div className="w-full max-w-[680px]">
+    <div className="min-h-screen flex flex-col items-center px-4 sm:px-8 py-8 bg-[#0a0a0f]">
+      <div className="w-full max-w-[680px] mx-auto">
 
         {/* 헤더 */}
         <h1
@@ -256,7 +263,7 @@ export default function Home() {
                 return (
                   <span key={name}>
                     <span
-                      className="text-[0.78rem] font-semibold px-[0.75rem] py-[0.35rem] rounded-[20px] transition-all duration-300"
+                      className="text-xs sm:text-sm font-semibold px-[0.75rem] py-[0.35rem] rounded-[20px] transition-all duration-300"
                       style={{
                         background: done ? 'rgba(34,211,160,0.15)' : active ? 'rgba(124,106,247,0.2)' : 'rgba(255,255,255,0.05)',
                         color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
@@ -302,9 +309,9 @@ export default function Home() {
                 const pct = total > 0 ? Math.round(v / total * 100) : 0;
                 return (
                   <div key={k} className="mb-[0.55rem]">
-                    <div className="flex justify-between mb-[0.2rem] text-[0.83rem]">
-                      <span className="text-[#8b8a9e]">{k}</span>
-                      <span className="text-[#c4c2d8] font-semibold">
+                    <div className="flex justify-between mb-[0.2rem]">
+                      <span className="text-xs sm:text-sm text-[#8b8a9e]">{k}</span>
+                      <span className="text-xs sm:text-sm text-[#c4c2d8] font-semibold">
                         {fmt(v)} <span className="text-[#444] font-normal">({pct}%)</span>
                       </span>
                     </div>
@@ -325,7 +332,7 @@ export default function Home() {
               )}
 
               {/* 다운로드 버튼 영역 */}
-              <div className="flex flex-wrap gap-3 mt-4">
+              <div className="flex gap-2 flex-wrap mt-4">
                 {result.pdf_base64 && (
                   <button
                     className="inline-flex items-center gap-2 px-5 py-[0.65rem] bg-[rgba(124,106,247,0.15)] border border-[rgba(124,106,247,0.4)] rounded-lg text-[#a78bfa] text-[0.88rem] font-semibold cursor-pointer hover:bg-[rgba(124,106,247,0.25)] transition-colors duration-200"
