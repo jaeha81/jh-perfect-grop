@@ -1,0 +1,11 @@
+# Railway nixpacks 빌드 설정
+# fpdf2 한글 폰트 지원을 위해 NanumGothic 설치 필수
+
+[phases.setup]
+nixPkgs = ["python311", "nanum-fonts"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[start]
+cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"

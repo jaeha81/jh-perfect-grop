@@ -127,7 +127,7 @@ if type_ == "리모델링" and not has_category(breakdown, "철거"):
 
 | 레이어 | 기술 |
 |-------|------|
-| Frontend | Next.js 14, TypeScript, Tailwind CSS |
+| Frontend | Next.js 14, JavaScript, Tailwind CSS |
 | Backend | FastAPI (Python 3.11) |
 | AI | Claude Sonnet 4.6 (VALIDATOR 총평), Claude Haiku 4.5 (ESTIMATOR) |
 | DB | unit_prices.json → Supabase (예정) |

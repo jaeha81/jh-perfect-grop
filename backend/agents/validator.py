@@ -5,6 +5,7 @@
   - Claude Sonnet은 룰 탐지 결과를 바탕으로 '총평' 문장만 생성
   - 누락 공종 탐지: 리모델링 철거, 욕실 방수, 전기·설비 최소 비율 등
 """
+import asyncio
 import os
 import anthropic
 
@@ -378,6 +379,17 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
             "suggestion": "인건비 또는 주요 공종 누락 여부를 전면 재검토하세요.",
         })
 
+    # R28: 욕실 공사 미장(모르타르) 항목 누락
+    has_plaster = (_has_category(breakdown, "미장") or _has_category(breakdown, "모르타르"))
+    if has_bathroom and not has_plaster and total > 3_000_000:
+        flags.append({
+            "severity": "warning",
+            "category": "욕실",
+            "rule_id": "R28",
+            "message": "욕실 공사에 미장(모르타르) 항목이 없습니다",
+            "suggestion": "방수 후 바닥 미장(모르타르)은 타일 부착 전 필수 공정입니다. 별도 항목이 누락되었는지 확인하세요.",
+        })
+
     # ── [카테고리 4] 욕실 기준 — 5개 룰 ────────────────────────────────────────
 
     # R29: 위생도기 없는 욕실
@@ -558,8 +570,10 @@ async def run_validator(
     # Step 1: Python 룰 엔진
     flags = _run_rule_engine(type_, area, breakdown)
 
-    # Step 2: Claude 총평 (룰 결과 전달)
-    expert_comment = _generate_expert_comment(type_, area, total, flags)
+    # Step 2: Claude 총평 — asyncio.to_thread로 블로킹 HTTP 호출 분리
+    expert_comment = await asyncio.to_thread(
+        _generate_expert_comment, type_, area, total, flags
+    )
 
     return {
         "is_valid": not any(f.get("severity") == "error" for f in flags),

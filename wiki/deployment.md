@@ -20,11 +20,11 @@
 
 ## API 엔드포인트
 
-| 경로 | 방식 | 설명 |
-|------|------|------|
-| `/api/health` | GET | 서버 상태 확인 |
-| `/api/estimate` | POST | 5 에이전트 파이프라인 (일반) |
-| `/api/estimate/stream` | POST | SSE 실시간 스트리밍 |
+| 경로                   | 방식 | 설명                         |
+| ---------------------- | ---- | ---------------------------- |
+| `/api/health`          | GET  | 서버 상태 확인               |
+| `/api/estimate`        | POST | 5 에이전트 파이프라인 (일반) |
+| `/api/estimate/stream` | POST | SSE 실시간 스트리밍          |
 
 ## 로컬 개발
 
@@ -38,13 +38,19 @@ cd frontend && npm run dev
 
 API 프록시: `next.config.js` → `NEXT_PUBLIC_BACKEND_URL` (기본값: `http://127.0.0.1:8001`)
 
+## 배포 URL
+
+- **Frontend (Vercel):** [jh-perfect-grop.vercel.app](https://jh-perfect-grop.vercel.app)
+- **Backend (Railway):** [jh-perfect-grop-backend.up.railway.app](https://jh-perfect-grop-backend.up.railway.app)
+- **Health Check:** [.../api/health](https://jh-perfect-grop-backend.up.railway.app/api/health)
+
 ## 배포 체크리스트
 
-- [ ] Railway에 `ANTHROPIC_API_KEY` 환경변수 설정
-- [ ] Railway 배포 후 URL 확인 (예: `https://jh-estimateai.railway.app`)
-- [ ] Vercel에 `NEXT_PUBLIC_BACKEND_URL=<Railway URL>` 설정
-- [ ] Vercel 재배포 (환경변수 적용)
-- [ ] `slides.md` 마지막 URL 업데이트
+- [ ] Railway에 `ANTHROPIC_API_KEY` 환경변수 설정 **← 사용자 확인 필요**
+- [ ] Railway 헬스체크 확인: `curl https://jh-perfect-grop-backend.up.railway.app/api/health`
+- [ ] Vercel에 `NEXT_PUBLIC_BACKEND_URL=https://jh-perfect-grop-backend.up.railway.app` 설정 **← 사용자 확인 필요**
+- [ ] Vercel 재배포 후 프론트엔드 동작 확인
+- [ ] `slides.md` URL 업데이트 완료 (2026-04-15)
 
 ## 관련 문서
 
