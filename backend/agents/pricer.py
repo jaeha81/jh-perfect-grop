@@ -27,18 +27,28 @@ _CATEGORY_DEFAULTS = {
 }
 
 
-def run_pricer(work_items: list[dict]) -> dict:
-    """단가 DB 조회 후 공종별 금액 산출"""
+def run_pricer(work_items: list[dict], tier: str = "standard") -> dict:
+    """단가 DB 조회 후 공종별 금액 산출
+
+    Args:
+        work_items: ESTIMATOR 출력 공종 항목 리스트
+        tier: "budget" → price_min, "standard" → price_base (기본), "premium" → price_max
+    """
     prices = _load_prices()
     priced_items = []
     breakdown: dict[str, int] = {}
+
+    # tier에 따라 사용할 단가 컬럼 결정
+    _TIER_MULTIPLIER = {"budget": 0.80, "standard": 1.0, "premium": 1.25}
+    tier_mult = _TIER_MULTIPLIER.get(tier, 1.0)
 
     for item in work_items:
         category = item.get("category", "")
         item_name = item.get("item", "")
         quantity = float(item.get("quantity", 0))
 
-        unit_price = _find_price(prices, category, item_name)
+        base_price = _find_price(prices, category, item_name)
+        unit_price = int(base_price * tier_mult)
         total_price = int(quantity * unit_price)
 
         priced_items.append({

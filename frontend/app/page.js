@@ -1,7 +1,38 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const AGENTS = ['SCANNER', 'ESTIMATOR', 'PRICER', 'VALIDATOR', 'REPORTER'];
+
+// 이력 관련 상수 및 함수
+const HISTORY_KEY = 'jh_estimate_history';
+const MAX_HISTORY = 10;
+
+function saveToHistory(estimateData) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const entry = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('ko-KR'),
+      type: estimateData.type,
+      area: estimateData.area,
+      min_cost: estimateData.min_cost,
+      max_cost: estimateData.max_cost,
+      unit_price: estimateData.unit_price,
+      breakdown: estimateData.breakdown,
+      validator_flags: estimateData.validator_flags,
+      expert_comment: estimateData.expert_comment,
+    };
+    const updated = [entry, ...existing].slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    return updated;
+  } catch { return []; }
+}
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  } catch { return []; }
+}
 
 const DEMO_VALUES = {
   type: '인테리어',
@@ -18,7 +49,15 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [compareResult, setCompareResult] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const fileRef = useRef();
+
+  // 마운트 시 이력 로드
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const fmt = (n) => n != null ? n.toLocaleString('ko-KR') + '원' : '-';
@@ -88,6 +127,7 @@ export default function Home() {
               setDoneSteps([0, 1, 2, 3, 4]);
               setActiveStep(-1);
               setResult(data);
+              setHistory(saveToHistory(data));
             } else if (event === 'error') {
               throw new Error(parsed.message);
             }
@@ -96,6 +136,37 @@ export default function Home() {
           }
         }
       }
+    } catch (err) {
+      setError(err.message);
+      setActiveStep(-1);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitCompare(e) {
+    e.preventDefault();
+    if (!form.area || !form.description) return;
+    setError(''); setCompareResult(null); setLoading(true);
+    setActiveStep(0); setDoneSteps([]);
+
+    const body = {
+      ...form,
+      area: parseFloat(form.area),
+      ...(imgFile ? { image_base64: imgFile.base64 } : {}),
+    };
+
+    try {
+      const res = await fetch('/api/estimate/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`서버 오류: ${res.status}`);
+      const data = await res.json();
+      setDoneSteps([0, 1, 2, 3, 4]);
+      setActiveStep(-1);
+      setCompareResult(data);
     } catch (err) {
       setError(err.message);
       setActiveStep(-1);
@@ -136,13 +207,59 @@ export default function Home() {
       <div className="w-full max-w-[680px] mx-auto">
 
         {/* 헤더 */}
-        <h1
-          className="text-[2.2rem] font-extrabold mb-[0.3rem] bg-transparent"
-          style={{ background: 'linear-gradient(135deg,#7c6af7,#22d3a0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-        >
-          JH EstimateAI
-        </h1>
-        <p className="text-[#6b6a80] mb-8 text-[0.9rem]">18년 현장 경험 기반 · 5 에이전트 AI 견적 시스템</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1
+              className="text-[2.2rem] font-extrabold m-0 bg-transparent"
+              style={{ background: 'linear-gradient(135deg,#7c6af7,#22d3a0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+            >
+              JH EstimateAI
+            </h1>
+            <p className="text-[#6b6a80] text-[0.9rem] mt-1">18년 현장 경험 기반 · 5 에이전트 AI 견적 시스템</p>
+          </div>
+          {history.length > 0 && (
+            <button
+              onClick={() => setShowHistory(v => !v)}
+              className="text-[0.8rem] font-semibold px-3 py-1.5 rounded-lg border"
+              style={{ background: 'rgba(124,106,247,0.12)', border: '1px solid rgba(124,106,247,0.3)', color: '#a78bfa' }}
+            >
+              이력 {history.length}건
+            </button>
+          )}
+        </div>
+
+        {/* 이력 패널 */}
+        {showHistory && history.length > 0 && (
+          <div className="rounded-2xl p-6 mb-5" style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="text-[0.78rem] font-semibold tracking-widest uppercase mb-4" style={{ color: '#a09eb8' }}>최근 견적 이력</div>
+            <div className="space-y-2">
+              {history.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+                  onClick={() => { setResult(h); setShowHistory(false); setDoneSteps([0,1,2,3,4]); }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-[0.75rem] px-2 py-0.5 rounded" style={{ background: 'rgba(124,106,247,0.15)', color: '#a78bfa' }}>{h.type}</span>
+                    <span className="text-[0.85rem]" style={{ color: '#c4c2d8' }}>{h.area}m²</span>
+                    <span className="text-[0.82rem]" style={{ color: '#8b8a9e' }}>{h.date}</span>
+                  </div>
+                  <span className="text-[0.85rem] font-semibold" style={{ color: '#7c6af7' }}>
+                    {h.min_cost?.toLocaleString('ko-KR')}원~
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => { localStorage.removeItem(HISTORY_KEY); setHistory([]); setShowHistory(false); }}
+              className="mt-3 text-[0.75rem]"
+              style={{ color: '#555', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              이력 삭제
+            </button>
+          </div>
+        )}
 
         {/* 입력 폼 카드 */}
         <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
@@ -247,6 +364,15 @@ export default function Home() {
               disabled={loading}
             >
               {loading ? '에이전트 분석 중...' : '견적 산출하기'}
+            </button>
+            <button
+              type="button"
+              onClick={submitCompare}
+              disabled={loading}
+              className="w-full py-3 mt-2 rounded-xl font-bold text-[0.9rem]"
+              style={{ background: 'rgba(34,211,160,0.1)', border: '1px solid rgba(34,211,160,0.3)', color: '#22d3a0', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.55 : 1 }}
+            >
+              {loading ? '분석 중...' : '⚖ 저가/표준/고급 비교 견적'}
             </button>
             {error && <p className="text-[#f87171] text-[0.85rem] mt-[0.5rem]">⚠ {error}</p>}
           </form>
@@ -391,6 +517,34 @@ export default function Home() {
               </div>
             )}
           </>
+        )}
+
+        {/* 비교 견적 결과 */}
+        {compareResult && (
+          <div className="rounded-2xl p-6 mb-5" style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="text-[0.78rem] font-semibold tracking-widest uppercase mb-4" style={{ color: '#a09eb8' }}>비교 견적 — 저가 / 표준 / 고급</div>
+            <div className="grid grid-cols-3 gap-3">
+              {Object.values(compareResult.compare || {}).map((tier) => (
+                <div key={tier.tier} className="rounded-xl p-4 text-center" style={{
+                  background: tier.tier === 'standard' ? 'rgba(124,106,247,0.1)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${tier.tier === 'standard' ? 'rgba(124,106,247,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                }}>
+                  <div className="text-[0.75rem] font-bold mb-2" style={{ color: tier.tier === 'premium' ? '#fbbf24' : tier.tier === 'standard' ? '#a78bfa' : '#6b6a80' }}>
+                    {tier.tier_label}
+                  </div>
+                  <div className="text-[1rem] font-bold" style={{ color: '#e8e6f0' }}>
+                    {tier.min_cost?.toLocaleString('ko-KR')}원
+                  </div>
+                  <div className="text-[0.75rem] mt-1" style={{ color: '#555' }}>
+                    ~ {tier.max_cost?.toLocaleString('ko-KR')}원
+                  </div>
+                  <div className="text-[0.72rem] mt-1" style={{ color: '#6b6a80' }}>
+                    {tier.unit_price?.toLocaleString('ko-KR')}원/m²
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

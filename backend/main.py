@@ -202,6 +202,44 @@ async def estimate_stream(req: EstimateRequest):
     )
 
 
+@app.post("/api/estimate/compare")
+async def estimate_compare(req: EstimateRequest):
+    """저가/표준/고급 3단계 비교 견적"""
+
+    # SCANNER + ESTIMATOR는 공통 (한 번만 실행)
+    scanner_context = ""
+    if req.image_base64:
+        scanner_context = await run_scanner(req.image_base64)
+
+    estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
+    work_items: list[dict] = estimator_out.get("work_items", [])
+
+    results: dict = {}
+    tier_labels = {"budget": "저가", "standard": "표준", "premium": "고급"}
+
+    for tier in ["budget", "standard", "premium"]:
+        pricer_out = run_pricer(work_items, tier=tier)
+        breakdown: dict[str, int] = pricer_out["breakdown"]
+        subtotal: int = pricer_out["subtotal"]
+        unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
+
+        results[tier] = {
+            "tier": tier,
+            "tier_label": tier_labels[tier],
+            "min_cost": pricer_out["min_cost"],
+            "max_cost": pricer_out["max_cost"],
+            "unit_price": unit_price,
+            "breakdown": breakdown,
+        }
+
+    return {
+        "type": req.type,
+        "area": req.area,
+        "scanner_context": scanner_context,
+        "compare": results,
+    }
+
+
 def _generate_summary(type_: str, area: float, min_cost: int, max_cost: int) -> str:
     try:
         msg = _get_claude().messages.create(
