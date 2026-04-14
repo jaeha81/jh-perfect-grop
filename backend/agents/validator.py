@@ -35,12 +35,18 @@ def _category_ratio(breakdown: dict, keyword: str, total: int) -> float:
 
 # ── Python 룰 엔진 (37개 룰) ──────────────────────────────────────────────────
 
-def _run_rule_engine(type_: str, area: float, breakdown: dict) -> list[dict]:
+def _has_item_keyword(work_items: list, keyword: str) -> bool:
+    """work_items 내 item 이름에 keyword가 포함된 항목이 있는지 확인"""
+    return any(keyword in item.get("item", "") for item in work_items)
+
+
+def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list | None = None) -> list[dict]:
     """
     18년 현장 경험 기반 명시적 검증 룰셋.
     AI 프롬프트가 아닌 Python 코드로 구현된 현장 기준.
     """
     flags: list[dict] = []
+    work_items = work_items or []
     total = sum(breakdown.values())
     if total <= 0 or area <= 0:
         return flags
@@ -150,7 +156,7 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict) -> list[dict]:
     has_plumbing = _has_category(breakdown, "설비") or _has_category(breakdown, "배관")
     has_bathroom = _has_category(breakdown, "욕실") or _has_category(breakdown, "위생")
     has_kitchen = _has_category(breakdown, "주방") or _has_category(breakdown, "싱크")
-    has_hood = _has_category(breakdown, "후드") or _has_category(breakdown, "환기")
+    has_hood = _has_category(breakdown, "후드") or _has_category(breakdown, "주방환기")
     has_floor = (_has_category(breakdown, "바닥") or _has_category(breakdown, "마루")
                  or _has_category(breakdown, "타일"))
     has_wall = (_has_category(breakdown, "도배") or _has_category(breakdown, "페인트")
@@ -206,14 +212,17 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict) -> list[dict]:
             "suggestion": "급수·배수 배관 교체 비용을 포함하세요. 특히 노후 배관은 욕실 공사 시 필수 교체입니다.",
         })
 
-    # R14: 주방 후드 누락
-    if has_kitchen and not has_hood:
+    # R14: 주방 후드 누락 — 싱크대가 실제로 존재하는 경우에만 체크
+    # (주방 공사 키워드만 있고 싱크대가 없는 경우 = 주방 타일·철거만 포함된 부분 공사이므로 제외)
+    has_sink_item = (_has_category(breakdown, "싱크") or _has_category(breakdown, "씽크")
+                    or _has_category(breakdown, "주방가구"))
+    if has_sink_item and not has_hood:
         flags.append({
             "severity": "warning",
             "category": "누락 공종",
             "rule_id": "R14",
-            "message": "주방 공사에 환기(후드) 항목이 없습니다",
-            "suggestion": "주방 후드는 「건축법 시행규칙」상 환기시설 설치 의무 대상입니다.",
+            "message": "싱크대/주방가구 공사에 환기(후드) 항목이 없습니다",
+            "suggestion": "주방 후드는 「건축법 시행규칙」상 환기시설 설치 의무 대상입니다. 후드 또는 주방환기 항목을 추가하세요.",
         })
 
     # R15: 바닥 공사 누락
@@ -406,14 +415,18 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict) -> list[dict]:
             "suggestion": "욕실 바닥·벽 타일 시공 포함 여부를 확인하세요.",
         })
 
-    # R31: 욕실 환기팬 없음
-    if has_bathroom and not _has_category(breakdown, "환기") and not _has_category(breakdown, "팬"):
+    # R31: 욕실 환기팬 없음 — "환기팬" 또는 "욕실환기"로만 체크 (주방 후드의 "환기"와 혼동 방지)
+    has_bath_fan = (_has_category(breakdown, "환기팬")
+                   or _has_category(breakdown, "욕실환기")
+                   or _has_category(breakdown, "욕실팬")
+                   or _has_category(breakdown, "팬"))
+    if has_bathroom and not has_bath_fan:
         flags.append({
-            "severity": "warning",
+            "severity": "info",
             "category": "욕실",
             "rule_id": "R31",
-            "message": "욕실 환기팬 교체 항목이 없습니다",
-            "suggestion": "욕실 환기팬은 곰팡이 방지를 위해 교체를 권장합니다.",
+            "message": "욕실 환기팬 교체 항목이 없습니다 (권장 사항)",
+            "suggestion": "욕실 환기팬은 곰팡이 방지를 위해 교체를 권장합니다. 필수 항목은 아닙니다.",
         })
 
     # ── [카테고리 5] 주방 기준 — 3개 룰 ────────────────────────────────────────
@@ -431,9 +444,12 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict) -> list[dict]:
             "suggestion": "싱크대·상하부장 포함 여부를 확인하세요. 별도 공급이라면 계약서에 명시하세요.",
         })
 
-    # R33: 싱크대 교체 시 후드 없음
+    # R33: 싱크대 교체 시 후드 없음 (R14와 중복 방지 — R14가 미발동된 경우에만 체크)
+    # R14는 has_sink_item 기준, R33은 정확히 싱크대 키워드가 있는 경우
+    # has_sink_item이 True면 R14가 이미 체크했으므로 R33은 패스
     has_sink = _has_category(breakdown, "싱크") or _has_category(breakdown, "씽크")
-    if has_sink and not has_hood:
+    if has_sink and not has_hood and not has_sink_item:
+        # has_sink_item = has_sink이므로 이 분기는 사실상 실행되지 않음 (안전망)
         flags.append({
             "severity": "warning",
             "category": "주방",

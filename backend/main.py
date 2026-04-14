@@ -1,17 +1,25 @@
 """JH EstimateAI — FastAPI Backend v0.3 (5 Agent Pipeline + Parallel Execution)"""
 import asyncio
 import json
+import logging
 import os
-from typing import Optional
+from typing import Literal, Optional
 
 import anthropic
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 load_dotenv()
+
+# ── 로그 설정 (Railway/uvicorn 환경에서 하위 logger 포함 캡처) ─────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 from agents.estimator import run_estimator
 from agents.pricer import run_pricer
@@ -23,7 +31,11 @@ app = FastAPI(title="JH EstimateAI API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://*.vercel.app",
+        os.getenv("FRONTEND_URL", ""),
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -42,8 +54,8 @@ def _get_claude():
 
 class EstimateRequest(BaseModel):
     description: str
-    area: float
-    type: str                       # 인테리어 | 신축 | 리모델링
+    area: float = Field(gt=0)
+    type: Literal["인테리어", "신축", "리모델링"]
     image_base64: Optional[str] = None   # Wave 4 SCANNER
 
 
@@ -98,9 +110,18 @@ async def estimate(req: EstimateRequest):
     unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
 
     # ── 병렬: VALIDATOR + Summary 동시 실행 (PRICER 완료 후) ──
-    validator_out, summary = await asyncio.gather(
+    _gather1 = await asyncio.gather(
         run_validator(req.type, req.area, breakdown, min_cost, max_cost),
-        _generate_summary(req.type, req.area, min_cost, max_cost),
+        _generate_summary_async(req.type, req.area, min_cost, max_cost),
+        return_exceptions=True,
+    )
+    validator_out = (
+        _gather1[0] if not isinstance(_gather1[0], Exception)
+        else {"flags": [], "expert_comment": "", "is_valid": True}
+    )
+    summary = (
+        _gather1[1] if not isinstance(_gather1[1], Exception)
+        else f"{req.area}m² {req.type} 공사 견적이 완료되었습니다."
     )
 
     # ── 견적 데이터 조합 ───────────────────────────────
@@ -121,14 +142,22 @@ async def estimate(req: EstimateRequest):
     }
 
     # ── 병렬: Agent5 PDF + Excel 동시 생성 ────────────
-    pdf_b64, excel_b64 = await asyncio.gather(
-        asyncio.to_thread(run_reporter, estimate_data),
+    _gather2 = await asyncio.gather(
+        asyncio.to_thread(_run_reporter_safe, estimate_data),
         asyncio.to_thread(run_reporter_excel, estimate_data),
+        return_exceptions=True,
     )
-    if pdf_b64:
-        estimate_data["pdf_base64"] = pdf_b64
-    if excel_b64:
-        estimate_data["excel_base64"] = excel_b64
+    pdf_result = _gather2[0] if not isinstance(_gather2[0], Exception) else None
+    excel_b64 = _gather2[1] if not isinstance(_gather2[1], Exception) else None
+    if pdf_result is not None:
+        pdf_b64, pdf_error = pdf_result
+    else:
+        pdf_b64, pdf_error = None, str(_gather2[0]) if isinstance(_gather2[0], Exception) else None
+    estimate_data["pdf_base64"] = pdf_b64 or None
+    estimate_data["excel_base64"] = excel_b64 or None
+    if pdf_error:
+        estimate_data["pdf_error"] = pdf_error
+        logger.error("estimate PDF 생성 실패: %s", pdf_error)
 
     return estimate_data
 
@@ -189,16 +218,17 @@ async def estimate_stream(req: EstimateRequest):
                 "scanner_context": scanner_context,
             }
 
-            summary, pdf_b64, excel_b64 = await asyncio.gather(
+            summary, pdf_result, excel_b64 = await asyncio.gather(
                 _generate_summary(req.type, req.area, min_cost, max_cost),
-                asyncio.to_thread(run_reporter, estimate_data),
+                asyncio.to_thread(_run_reporter_safe, estimate_data),
                 asyncio.to_thread(run_reporter_excel, estimate_data),
             )
+            pdf_b64, pdf_error = pdf_result
             estimate_data["summary"] = summary
-            if pdf_b64:
-                estimate_data["pdf_base64"] = pdf_b64
-            if excel_b64:
-                estimate_data["excel_base64"] = excel_b64
+            estimate_data["pdf_base64"] = pdf_b64 or None
+            estimate_data["excel_base64"] = excel_b64 or None
+            if pdf_error:
+                estimate_data["pdf_error"] = pdf_error
 
             yield f"data: {json.dumps({'event': 'complete', 'data': estimate_data})}\n\n"
 
@@ -291,16 +321,30 @@ async def recalculate(req: RecalculateRequest):
     }
 
     # ── 병렬: PDF + Excel 동시 생성 ──────────────────────
-    pdf_b64, excel_b64 = await asyncio.gather(
-        asyncio.to_thread(run_reporter, estimate_data),
+    pdf_result, excel_result = await asyncio.gather(
+        asyncio.to_thread(_run_reporter_safe, estimate_data),
         asyncio.to_thread(run_reporter_excel, estimate_data),
     )
-    if pdf_b64:
-        estimate_data["pdf_base64"] = pdf_b64
-    if excel_b64:
-        estimate_data["excel_base64"] = excel_b64
+    pdf_b64, pdf_error = pdf_result
+    estimate_data["pdf_base64"] = pdf_b64 or None
+    estimate_data["excel_base64"] = excel_result or None
+    if pdf_error:
+        estimate_data["pdf_error"] = pdf_error
+        logger.error("recalculate PDF 생성 실패: %s", pdf_error)
 
     return estimate_data
+
+
+def _run_reporter_safe(estimate_data: dict) -> tuple[str | None, str | None]:
+    """run_reporter 래퍼 — (pdf_b64, error_msg) 튜플 반환. 실패 시 error_msg에 원인 포함."""
+    try:
+        result = run_reporter(estimate_data)
+        if result is None:
+            return None, "run_reporter returned None (폰트 누락 또는 fpdf2 오류 — Railway 로그 확인)"
+        return result, None
+    except Exception as e:
+        import traceback
+        return None, traceback.format_exc()
 
 
 async def _generate_summary(type_: str, area: float, min_cost: int, max_cost: int) -> str:
