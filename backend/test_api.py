@@ -82,7 +82,7 @@ def run_test(case: dict, client: httpx.Client) -> bool:
         elapsed = round(time.time() - t0, 1)
 
         if resp.status_code != 200:
-            print(f"  ✗ HTTP {resp.status_code}")
+            print(f"  FAIL HTTP {resp.status_code}")
             print(f"  {resp.text[:200]}")
             return False
 
@@ -92,17 +92,17 @@ def run_test(case: dict, client: httpx.Client) -> bool:
         required = ["min_cost", "max_cost", "breakdown", "validator_flags"]
         missing = [k for k in required if k not in data]
         if missing:
-            print(f"  ✗ 필드 누락: {missing}")
+            print(f"  FAIL 필드 누락: {missing}")
             return False
 
         # 기대값 확인
         if not case["expect"](data):
-            print(f"  ✗ 기대값 미충족")
+            print(f"  FAIL 기대값 미충족")
             return False
 
         # 결과 출력
         area = case["payload"]["area"]
-        print(f"  ✓ {elapsed}s  |  {fmt_krw(data['min_cost'])} ~ {fmt_krw(data['max_cost'])}")
+        print(f"  OK {elapsed}s  |  {fmt_krw(data['min_cost'])} ~ {fmt_krw(data['max_cost'])}")
         print(f"    단가: {fmt_krw(data.get('unit_price', 0))}/m²  |  면적: {area}m²")
 
         breakdown = data.get("breakdown", {})
@@ -123,10 +123,10 @@ def run_test(case: dict, client: httpx.Client) -> bool:
         return True
 
     except httpx.ConnectError:
-        print(f"  ✗ 연결 실패 — 백엔드가 실행 중인지 확인: uvicorn main:app --reload")
+        print(f"  FAIL 연결 실패 — 백엔드가 실행 중인지 확인: uvicorn main:app --reload")
         return False
     except Exception as e:
-        print(f"  ✗ 오류: {e}")
+        print(f"  FAIL 오류: {e}")
         return False
 
 
@@ -343,14 +343,14 @@ def main():
             resp = client.get(f"{BASE}/api/health", timeout=5.0)
             h = resp.json()
             api_key_ok = h.get("api_key_set", False)
-            print(f"\n헬스체크: {'✓' if resp.status_code == 200 else '✗'}")
-            print(f"API Key: {'✓ 설정됨' if api_key_ok else '✗ 미설정 — .env 확인 필요'}")
+            print(f"\n헬스체크: {'OK' if resp.status_code == 200 else 'FAIL'}")
+            print(f"API Key: {'OK 설정됨' if api_key_ok else 'FAIL 미설정 — .env 확인 필요'}")
             if not api_key_ok:
                 print("\n⚠ ANTHROPIC_API_KEY가 설정되지 않았습니다.")
                 print("  backend/.env 파일에 키를 추가하세요.")
                 sys.exit(1)
     except httpx.ConnectError:
-        print("\n✗ 백엔드 서버에 연결할 수 없습니다.")
+        print("\nFAIL 백엔드 서버에 연결할 수 없습니다.")
         print("  실행 방법: cd backend && uvicorn main:app --reload")
         sys.exit(1)
 
