@@ -81,6 +81,50 @@
 }
 ```
 
+### POST /api/estimate/stream
+
+SSE(Server-Sent Events) 실시간 스트리밍. 에이전트 단계별 진행 상황을 실시간 전달.
+
+#### Request
+
+`/api/estimate`와 동일
+
+#### SSE 이벤트 형식
+
+```
+data: {"event": "agent_start", "agent": "ESTIMATOR", "step": 1}
+data: {"event": "agent_done",  "agent": "ESTIMATOR", "step": 1}
+data: {"event": "complete", "data": { ...견적 결과 전체... }}
+data: {"event": "error", "message": "오류 메시지"}
+```
+
+---
+
+### POST /api/estimate/compare
+
+저가 / 표준 / 고급 3단계 비교 견적. SCANNER+ESTIMATOR는 1회 실행, PRICER만 3회(tier별) 실행.
+
+요청 형식은 `/api/estimate`와 동일.
+
+#### Compare Response
+
+```json
+{
+  "type": "인테리어",
+  "area": 99.17,
+  "scanner_context": "(이미지 첨부 시) 공간 분석 결과",
+  "compare": {
+    "budget":   { "tier": "budget",   "tier_label": "저가", "min_cost": 17600000, "max_cost": 24800000, "unit_price": 200000, "breakdown": {} },
+    "standard": { "tier": "standard", "tier_label": "표준", "min_cost": 22000000, "max_cost": 31000000, "unit_price": 250000, "breakdown": {} },
+    "premium":  { "tier": "premium",  "tier_label": "고급", "min_cost": 27500000, "max_cost": 38800000, "unit_price": 312000, "breakdown": {} }
+  }
+}
+```
+
+**tier 배율**: budget×0.80 / standard×1.00 / premium×1.25
+
+---
+
 ## 파이프라인 흐름
 
 ```

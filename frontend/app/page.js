@@ -71,6 +71,16 @@ export default function Home() {
     setForm(DEMO_VALUES);
   }
 
+  // VALIDATOR 강조 데모 (바닥재만 → 이상치 탐지)
+  function loadDemoValidator() {
+    setForm({ type: '인테리어', area: '99.17', description: '바닥재(강마루)만 교체. 다른 공사 없음.' });
+  }
+
+  // 비교 견적 데모 (프리미엄 시나리오)
+  function loadDemoCompare() {
+    setForm({ type: '리모델링', area: '132.0', description: '40평 리모델링, 주방·욕실 2개 전면 교체, 창호 전체 교체(LG지인), 거실+방4개 강마루, 도배 전체, 전기 전면, 냉난방 시스템에어컨 4대' });
+  }
+
   // 이미지 → base64 변환
   function handleImage(file) {
     if (!file) return;
@@ -315,14 +325,33 @@ export default function Home() {
         <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
           <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">견적 정보 입력</div>
 
-          {/* 데모 실행 버튼 */}
-          <button
-            type="button"
-            onClick={loadDemo}
-            className="w-full mb-5 py-[0.6rem] rounded-lg border border-[#22d3a0]/40 bg-[#22d3a0]/10 text-[#22d3a0] text-[0.88rem] font-semibold cursor-pointer hover:bg-[#22d3a0]/20 transition-colors duration-200"
-          >
-            ▶ 데모 실행 — 30평 아파트 인테리어 샘플 입력
-          </button>
+          {/* 데모 버튼 3종 */}
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            <button
+              type="button"
+              onClick={loadDemo}
+              className="py-[0.55rem] rounded-lg text-[0.78rem] font-semibold cursor-pointer transition-colors duration-150"
+              style={{ background: 'rgba(34,211,160,0.1)', border: '1px solid rgba(34,211,160,0.35)', color: '#22d3a0' }}
+            >
+              ▶ 정상 시나리오
+            </button>
+            <button
+              type="button"
+              onClick={loadDemoValidator}
+              className="py-[0.55rem] rounded-lg text-[0.78rem] font-semibold cursor-pointer transition-colors duration-150"
+              style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#fbbf24' }}
+            >
+              ⚠ VALIDATOR 시나리오
+            </button>
+            <button
+              type="button"
+              onClick={loadDemoCompare}
+              className="py-[0.55rem] rounded-lg text-[0.78rem] font-semibold cursor-pointer transition-colors duration-150"
+              style={{ background: 'rgba(124,106,247,0.1)', border: '1px solid rgba(124,106,247,0.35)', color: '#a78bfa' }}
+            >
+              ⚖ 비교 시나리오
+            </button>
+          </div>
 
           <form onSubmit={submit}>
 
