@@ -104,6 +104,8 @@ AI에게 "전문가처럼 행동해라"고 시키는 게 아니라,
 - VALIDATOR: 정상 판정 + 전문가 총평 자동 생성 (Python 룰 엔진 37개 전체 통과)
 - PDF: 즉시 다운로드
 
+> 라이브 데모: **[jh-perfect-grop.vercel.app](https://jh-perfect-grop.vercel.app)**
+
 ---
 
 ## Slide 6-B — 차별화 기능: 비교 견적 + 이력 관리

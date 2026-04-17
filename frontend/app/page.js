@@ -379,7 +379,7 @@ export default function Home() {
             </div>
 
             <div className="mb-[1.1rem]">
-              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">면적 (m²)</label>
+              <label className="block text-[#8b8a9e] text-[0.83rem] mb-[0.4rem] font-medium">면적 (m²) <span style={{fontWeight:'normal',opacity:0.7}}>— 1평 ≈ 3.3m²</span></label>
               <input
                 className="w-full bg-[#0d0d12] border border-white/[0.09] rounded-lg text-[#e8e6f0] px-4 py-[0.65rem] text-[0.95rem] outline-none"
                 type="number"
@@ -533,7 +533,7 @@ export default function Home() {
             {/* 견적 요약 */}
             <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-8 mb-5">
               <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-5">견적 결과</div>
-              <div className="text-[1.5rem] font-extrabold text-[#7c6af7] mb-[0.4rem]">
+              <div className="text-[2rem] font-extrabold text-[#7c6af7] mb-[0.4rem]">
                 {fmt(result.min_cost)} ~ {fmt(result.max_cost)}
               </div>
               <div className="text-[#555] text-[0.82rem] mb-6">
