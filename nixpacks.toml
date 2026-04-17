@@ -1,4 +1,4 @@
-# Railway nixpacks 빌드 설정
+# Railway 루트 기준 nixpacks 빌드 설정
 # fpdf2 한글 폰트 지원을 위해 NanumGothic 설치 필수
 
 [phases.setup]
