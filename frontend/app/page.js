@@ -200,13 +200,18 @@ export default function Home() {
     if (!result?.pdf_base64) return;
     const blob = new Blob([Uint8Array.from(atob(result.pdf_base64), c => c.charCodeAt(0))], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `JH견적서_${result.type}_${result.area}m².pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      window.open(url, '_blank');
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `JH견적서_${result.type}_${result.area}m².pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   }
 
   // Excel 다운로드
@@ -724,27 +729,29 @@ export default function Home() {
         {compareResult && (
           <div className="rounded-2xl p-6 mb-5" style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="text-[0.78rem] font-semibold tracking-widest uppercase mb-4" style={{ color: '#a09eb8' }}>비교 견적 — 저가 / 표준 / 고급</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {Object.values(compareResult.compare || {}).map((tier) => (
-                <div key={tier.tier} className="rounded-xl p-4 text-center" style={{
+                <div key={tier.tier} className="rounded-xl p-4 flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0" style={{
                   background: tier.tier === 'standard' ? 'rgba(124,106,247,0.1)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${tier.is_valid === false ? 'rgba(239,68,68,0.4)' : tier.tier === 'standard' ? 'rgba(124,106,247,0.3)' : 'rgba(255,255,255,0.07)'}`,
                 }}>
-                  <div className="text-[0.75rem] font-bold mb-2" style={{ color: tier.tier === 'premium' ? '#fbbf24' : tier.tier === 'standard' ? '#a78bfa' : '#6b6a80' }}>
+                  <div className="text-[0.75rem] font-bold sm:mb-2 min-w-[48px]" style={{ color: tier.tier === 'premium' ? '#fbbf24' : tier.tier === 'standard' ? '#a78bfa' : '#6b6a80' }}>
                     {tier.is_valid === false && <span className="mr-1">⚠️</span>}{tier.tier_label}
                   </div>
-                  <div className="text-[1rem] font-bold" style={{ color: '#e8e6f0' }}>
-                    {tier.min_cost?.toLocaleString('ko-KR')}원
-                  </div>
-                  <div className="text-[0.75rem] mt-1" style={{ color: '#555' }}>
-                    ~ {tier.max_cost?.toLocaleString('ko-KR')}원
-                  </div>
-                  <div className="text-[0.72rem] mt-1" style={{ color: '#6b6a80' }}>
-                    {tier.unit_price?.toLocaleString('ko-KR')}원/m²
+                  <div className="flex-1 sm:flex-none">
+                    <div className="text-[0.95rem] font-bold" style={{ color: '#e8e6f0' }}>
+                      {tier.min_cost?.toLocaleString('ko-KR')}원
+                    </div>
+                    <div className="text-[0.75rem] sm:mt-1" style={{ color: '#555' }}>
+                      ~ {tier.max_cost?.toLocaleString('ko-KR')}원
+                    </div>
+                    <div className="text-[0.72rem] sm:mt-1" style={{ color: '#6b6a80' }}>
+                      {tier.unit_price?.toLocaleString('ko-KR')}원/m²
+                    </div>
                   </div>
                   {tier.validator_flags?.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-white/[0.06] text-[0.7rem]" style={{ color: '#fbbf24' }}>
-                      검증 경고 {tier.validator_flags.length}건
+                    <div className="sm:mt-2 sm:pt-2 sm:border-t border-white/[0.06] text-[0.7rem]" style={{ color: '#fbbf24' }}>
+                      경고 {tier.validator_flags.length}건
                     </div>
                   )}
                 </div>
