@@ -157,7 +157,8 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
     has_plumbing = _has_category(breakdown, "설비") or _has_category(breakdown, "배관")
     has_bathroom = _has_category(breakdown, "욕실") or _has_category(breakdown, "위생")
     has_kitchen = _has_category(breakdown, "주방") or _has_category(breakdown, "싱크")
-    has_hood = _has_category(breakdown, "후드") or _has_category(breakdown, "주방환기")
+    has_hood = (_has_category(breakdown, "후드") or _has_category(breakdown, "주방환기")
+                or _has_item_keyword(work_items, "후드") or _has_item_keyword(work_items, "주방환기"))
     has_floor = (_has_category(breakdown, "바닥") or _has_category(breakdown, "마루")
                  or _has_category(breakdown, "타일"))
     has_wall = (_has_category(breakdown, "도배") or _has_category(breakdown, "페인트")
@@ -214,9 +215,10 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
         })
 
     # R14: 주방 후드 누락 — 싱크대가 실제로 존재하는 경우에만 체크
-    # (주방 공사 키워드만 있고 싱크대가 없는 경우 = 주방 타일·철거만 포함된 부분 공사이므로 제외)
+    # breakdown은 "주방" 단일 카테고리로 집계되므로 work_items에서 싱크대 존재 확인
     has_sink_item = (_has_category(breakdown, "싱크") or _has_category(breakdown, "씽크")
-                    or _has_category(breakdown, "주방가구"))
+                    or _has_category(breakdown, "주방가구")
+                    or _has_item_keyword(work_items, "싱크") or _has_item_keyword(work_items, "씽크"))
     if has_sink_item and not has_hood:
         flags.append({
             "severity": "warning",
@@ -270,12 +272,19 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
         })
 
     # R19: 바닥 마감재 전체 누락
-    has_floor_tile = _has_category(breakdown, "타일")
+    # breakdown은 카테고리 단위("바닥")로 집계되므로 work_items에서 세부 자재 확인
+    has_floor_tile = (_has_category(breakdown, "타일")
+                      or _has_item_keyword(work_items, "타일"))
     has_wood_floor = (_has_category(breakdown, "마루")
                       or _has_category(breakdown, "데코타일")
-                      or _has_category(breakdown, "에폭시"))
+                      or _has_category(breakdown, "에폭시")
+                      or _has_item_keyword(work_items, "마루")
+                      or _has_item_keyword(work_items, "데코타일")
+                      or _has_item_keyword(work_items, "에폭시"))
+    has_floor_category = _has_category(breakdown, "바닥")  # "바닥" 카테고리 자체가 바닥 마감 포함
     if (type_ in ("인테리어", "리모델링")
-            and not has_floor_tile and not has_wood_floor and total > 5_000_000):
+            and not has_floor_tile and not has_wood_floor and not has_floor_category
+            and total > 5_000_000):
         flags.append({
             "severity": "warning",
             "category": "누락 공종",
@@ -434,10 +443,12 @@ def _run_rule_engine(type_: str, area: float, breakdown: dict, work_items: list 
     # ── [카테고리 5] 주방 기준 — 3개 룰 ────────────────────────────────────────
 
     # R32: 싱크대 없는 주방 인테리어
-    if (has_kitchen
-            and not _has_category(breakdown, "싱크")
-            and not _has_category(breakdown, "씽크")
-            and not _has_category(breakdown, "주방가구")):
+    # breakdown은 "주방" 단일 카테고리로 집계되므로 work_items에서 싱크대 항목 확인
+    has_sink_in_items = (_has_item_keyword(work_items, "싱크") or _has_item_keyword(work_items, "씽크")
+                         or _has_item_keyword(work_items, "주방가구"))
+    has_sink_in_breakdown = (_has_category(breakdown, "싱크") or _has_category(breakdown, "씽크")
+                              or _has_category(breakdown, "주방가구"))
+    if has_kitchen and not has_sink_in_breakdown and not has_sink_in_items:
         flags.append({
             "severity": "warning",
             "category": "주방",
@@ -545,7 +556,8 @@ def _generate_expert_comment(
 # ── 공개 API ──────────────────────────────────────────────────────────────────
 
 async def run_validator(
-    type_: str, area: float, breakdown: dict, min_cost: int, max_cost: int
+    type_: str, area: float, breakdown: dict, min_cost: int, max_cost: int,
+    work_items: list | None = None,
 ) -> dict:
     """
     VALIDATOR 실행:
@@ -555,7 +567,7 @@ async def run_validator(
     total = sum(breakdown.values())
 
     # Step 1: Python 룰 엔진
-    flags = _run_rule_engine(type_, area, breakdown)
+    flags = _run_rule_engine(type_, area, breakdown, work_items or [])
 
     # Step 2: Claude 총평 — asyncio.to_thread로 블로킹 HTTP 호출 분리
     expert_comment = await asyncio.to_thread(

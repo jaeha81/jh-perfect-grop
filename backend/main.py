@@ -108,8 +108,9 @@ async def estimate(req: EstimateRequest):
     unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
 
     # ── 병렬: VALIDATOR + Summary 동시 실행 (PRICER 완료 후) ──
+    priced_items: list[dict] = pricer_out.get("priced_items", [])
     _gather1 = await asyncio.gather(
-        run_validator(req.type, req.area, breakdown, min_cost, max_cost),
+        run_validator(req.type, req.area, breakdown, min_cost, max_cost, priced_items),
         _generate_summary_async(req.type, req.area, min_cost, max_cost),
         return_exceptions=True,
     )
@@ -195,7 +196,8 @@ async def estimate_stream(req: EstimateRequest):
 
             # ── 순차: Agent 4 VALIDATOR ────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'VALIDATOR', 'step': 3})}\n\n"
-            validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
+            _stream_priced = pricer_out.get("priced_items", [])
+            validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost, _stream_priced)
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'VALIDATOR', 'step': 3, 'data': {'flags_count': len(validator_out.get('flags', []))}})}\n\n"
 
             # ── 병렬: Agent 5 REPORTER + Summary 동시 실행 ─
@@ -273,7 +275,7 @@ async def estimate_compare(req: EstimateRequest):
         max_cost: int = pricer_out["max_cost"]
         subtotal: int = pricer_out["subtotal"]
         unit_price: int = int(subtotal / req.area) if req.area > 0 else 0
-        validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost)
+        validator_out = await run_validator(req.type, req.area, breakdown, min_cost, max_cost, work_items)
         return tier, {
             "tier": tier,
             "tier_label": tier_labels[tier],
@@ -311,7 +313,7 @@ async def recalculate(req: RecalculateRequest):
     max_cost = int(subtotal * 1.15)
     unit_price = int(subtotal / req.area) if req.area > 0 else 0
 
-    validator_out = await run_validator(req.type, req.area, req.breakdown, min_cost, max_cost)
+    validator_out = await run_validator(req.type, req.area, req.breakdown, min_cost, max_cost, req.work_items or [])
 
     summary = req.summary or await _generate_summary_async(req.type, req.area, min_cost, max_cost)
 
