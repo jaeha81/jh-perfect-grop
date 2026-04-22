@@ -359,7 +359,7 @@ def _run_reporter_safe(estimate_data: dict) -> tuple[str | None, str | None]:
     try:
         result = run_reporter(estimate_data)
         if result is None:
-            return None, "run_reporter returned None (폰트 누락 또는 fpdf2 오류 — Railway 로그 확인)"
+            return None, "run_reporter returned None (폰트 누락 또는 fpdf2 오류 — 서버 로그 확인)"
         return result, None
     except Exception as e:
         import traceback

@@ -13,7 +13,11 @@ except ImportError:
     _FPDF_OK = False
 
 # 한글 폰트 경로 후보 (regular / bold 분리)
+# 번들 폰트를 최우선으로 검색 (Render/Fly.io 등 apt 미지원 환경 대응)
+_BUNDLE_FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "fonts")
 _FONT_REGULAR_CANDIDATES = [
+    os.path.join(_BUNDLE_FONT_DIR, "NanumGothic.ttf"),
+    os.path.join(_BUNDLE_FONT_DIR, "NanumGothicBold.ttf"),
     "C:/Windows/Fonts/malgun.ttf",
     "C:/Windows/Fonts/NanumGothic.ttf",
     "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
@@ -22,6 +26,8 @@ _FONT_REGULAR_CANDIDATES = [
 ]
 
 _FONT_BOLD_CANDIDATES = [
+    os.path.join(_BUNDLE_FONT_DIR, "NanumGothicBold.ttf"),
+    os.path.join(_BUNDLE_FONT_DIR, "NanumGothic.ttf"),
     "C:/Windows/Fonts/malgunbd.ttf",
     "C:/Windows/Fonts/NanumGothicBold.ttf",
     "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
@@ -160,17 +166,18 @@ def run_reporter(estimate_data: dict) -> str | None:
             for flag in flags:
                 severity = flag.get("severity", "warning")
                 color = (220, 50, 50) if severity == "error" else (200, 140, 0)
-                pdf.set_text_color(*color)
                 label = "[오류]" if severity == "error" else "[주의]"
+                suggestion = flag.get("suggestion", "")
+                msg_line = f"{flag.get('category', '')} - {flag.get('message', '')}"
+                if suggestion:
+                    msg_line += f"\n    >> {suggestion}"
+                pdf.set_font(font_name, _bold_style, 9)
+                pdf.set_text_color(*color)
                 pdf.cell(20, 6, label)
                 pdf.set_text_color(0, 0, 0)
-                pdf.multi_cell(0, 6, f"{flag.get('category', '')} — {flag.get('message', '')}")
-                pdf.set_font(font_name, "", 8)
-                pdf.set_text_color(100, 100, 100)
-                pdf.cell(20, 5, "")
-                pdf.multi_cell(0, 5, f"→ {flag.get('suggestion', '')}")
-                pdf.set_text_color(0, 0, 0)
                 pdf.set_font(font_name, "", 9)
+                pdf.multi_cell(0, 6, msg_line, new_x="LMARGIN", new_y="NEXT")
+                pdf.ln(1)
             pdf.ln(3)
 
         if expert_comment:
