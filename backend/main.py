@@ -419,6 +419,37 @@ async def recalculate(req: RecalculateRequest):
 _INQUIRY_LOG_PATH = os.path.join(os.path.dirname(__file__), "data", "inquiries.jsonl")
 
 
+@app.get("/api/inquiries")
+async def list_inquiries(token: Optional[str] = None, limit: int = 50):
+    """관리자 상담 목록 조회 — 환경변수 ADMIN_TOKEN 일치 시 허용. 미설정 시 토큰 불필요(개발 환경)."""
+    from fastapi import HTTPException
+    admin_token = os.getenv("ADMIN_TOKEN", "")
+    if admin_token and token != admin_token:
+        raise HTTPException(status_code=401, detail="관리자 토큰이 올바르지 않습니다.")
+
+    records: list[dict] = []
+    if os.path.exists(_INQUIRY_LOG_PATH):
+        try:
+            with open(_INQUIRY_LOG_PATH, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            records.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            pass
+        except Exception as e:
+            logger.warning("inquiries 읽기 실패: %s", e)
+
+    # 최신 순 정렬 후 limit 적용
+    records.sort(key=lambda r: r.get("received_at", ""), reverse=True)
+    return {
+        "ok": True,
+        "total": len(records),
+        "items": records[:limit],
+    }
+
+
 @app.post("/api/inquiries")
 async def create_inquiry(req: InquiryRequest):
     """상담/방문 요청 접수 — 최소 구현. 확인용 inquiry_id와 접수 시각을 반환."""
