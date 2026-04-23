@@ -13,6 +13,24 @@
 
 ---
 
+## [2026-04-23] v2 전개 완료 (Phase A~F)
+
+- **범위**: 7단계 입력 폼 + 9섹션 리포트 + `/admin` + `/api/report` + `/api/inquiries` (GET/POST)
+- **신규 파일**:
+  - `frontend/app/admin/page.js`, `frontend/lib/estimate-*.js`, `frontend/data/estimate-*.js`,
+    `frontend/components/estimate/*.jsx`
+  - backend `POST /api/inquiries`, `GET /api/inquiries`, `POST /api/report`
+- **변경**: `reporter.py` — PDF/Excel에 3단계 비교·포함/별도/제외·일정·공정계획·AI 코멘트 섹션 추가
+- **제한사항** (프로덕션 전환 시 조치 필요):
+  1. `inquiries.jsonl`은 컨테이너 휘발성 — Vercel/Railway 재배포 시 초기화. Supabase 연동 권장
+  2. `ADMIN_TOKEN` 미설정 시 `/admin` 무인증 개방 (개발 편의). 배포 전 **반드시** 설정
+  3. enriched PDF 재생성은 비동기 — 결과 화면 진입 직후 1~2초 내 pdfBase64 교체됨.
+     즉시 다운로드 클릭 시 초기(raw) 버전이 내려올 수 있음
+  4. `form_snapshot`은 백엔드에 전달되지만 현재는 저장하지 않음 (관리자 확장 예비)
+- **상태**: ✅ 완료 — PR #1 병합 대기
+
+---
+
 ## [2026-04-14] VALIDATOR 주방 환기(후드) 플래그 과다
 
 - **문제**: scenario_1(정상 견적)에서도 "주방 환기(후드) 항목이 없습니다" 경고 발생

@@ -17,6 +17,17 @@
 
 ---
 
+## v2 (2026-04-23) 주요 기능
+
+- **7단계 실무 상담 폼** — 고객정보 → 공간정보 → 현장여건 → 공사범위(25종) → 마감등급 → 일정·업로드. 약 60개 필드
+- **9섹션 결과 리포트** — 요약, 3단계 비교견적, 공종별 세부, 포함/별도/제외, 공사일정, 공정계획, AI 코멘트, 주의사항, 액션 버튼
+- **공간/현장 보정 엔진** — 공간 9종 × 현장 가산(엘리베이터·야간·운영중) × 등급 배율 = 자동 multiplier
+- **입력 중간저장** — localStorage 14일, 창 닫아도 "이어서 작성하기"로 복귀
+- **상담 접수 + 관리자 콘솔** — `POST /api/inquiries` → `/admin` 페이지에서 실시간 확인
+- **풍부한 PDF/Excel** — 3단계 비교·공정계획·AI 코멘트까지 포함된 다운로드 (`POST /api/report`)
+
+---
+
 ## 왜 이 프로젝트인가
 
 기존 AI 견적 도구의 공통 문제:
@@ -142,6 +153,7 @@ if type_ == "리모델링" and not has_category(breakdown, "철거"):
 ```bash
 # 1. 환경변수
 echo "ANTHROPIC_API_KEY=your_key" > backend/.env
+echo "ADMIN_TOKEN=your_admin_token" >> backend/.env   # /admin 접근 토큰 (선택)
 
 # 2. 백엔드 실행
 cd backend
@@ -153,10 +165,20 @@ cd frontend
 npm install && npm run dev
 
 # 4. 브라우저
-open http://localhost:3000
+open http://localhost:3000          # 사용자: 7단계 견적
+open http://localhost:3000/admin    # 관리자: 상담 접수 목록
 ```
 
 Windows는 `start.bat` 더블클릭으로 한 번에 실행.
+
+### 주요 엔드포인트 (v2)
+
+- `POST /api/estimate/stream` — 5 에이전트 SSE 파이프라인
+- `POST /api/report` — enriched 데이터로 풍부한 PDF/Excel 재생성
+- `POST /api/inquiries` — 상담/방문 접수
+- `GET /api/inquiries?token=...&limit=50` — 관리자 목록 조회 (ADMIN_TOKEN)
+
+자세한 명세: [wiki/api-spec.md](wiki/api-spec.md)
 
 ---
 

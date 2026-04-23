@@ -1,6 +1,6 @@
 # API 명세
 
-> 최종 업데이트: 2026-04-11
+> 최종 업데이트: 2026-04-23 (v2)
 
 ## Base URL
 
@@ -28,14 +28,19 @@
 
 ### POST /api/estimate
 
-**Request**
+**Request** (v2 필드 추가 — 모두 optional)
 
 ```json
 {
   "type": "인테리어",
   "area": 84.5,
   "description": "아파트 전체 인테리어, 주방·욕실 포함",
-  "image_base64": "(선택) base64 인코딩 이미지"
+  "image_base64": "(선택) base64 인코딩 이미지",
+  "customer_name": "홍길동",
+  "customer_phone": "010-1234-5678",
+  "address": "서울 강남구 ...",
+  "inquiry_id": "INQ-260423-001",
+  "form_snapshot": { "... 전체 폼 덤프 (관리자 확장 예비)" }
 }
 ```
 
@@ -137,7 +142,155 @@ POST /api/estimate
  → 응답 반환
 ```
 
+---
+
+## v2 엔드포인트 (2026-04-23 추가)
+
+### POST /api/inquiries
+
+상담/방문 접수 — 결과 페이지 "상담 요청하기" / "현장 방문 상담 예약" 버튼에서 호출.
+
+**Request**
+
+```json
+{
+  "inquiry_id": "INQ-260423-001",
+  "kind": "consult",
+  "customer_name": "홍길동",
+  "customer_phone": "010-1234-5678",
+  "email": "guest@example.com",
+  "address": "서울 강남구 ...",
+  "space_type": "인테리어",
+  "area": 99.17,
+  "note": "저녁 시간 연락 선호"
+}
+```
+
+`kind`는 `consult` (상담 요청) 또는 `visit` (방문 예약).
+
+**Response**
+
+```json
+{
+  "ok": true,
+  "inquiry_id": "INQ-260423-001",
+  "kind": "consult",
+  "received_at": "2026-04-23T21:15:33",
+  "message": "상담 요청이 접수되었습니다. 영업일 기준 1일 이내 담당자가 연락드립니다."
+}
+```
+
+저장: `backend/data/inquiries.jsonl` (append-only). 프로덕션은 Supabase 연동 권장.
+
+---
+
+### GET /api/inquiries
+
+관리자 상담 목록 조회 — 프론트 `/admin` 페이지에서 호출.
+
+**Query**
+
+| 파라미터 | 기본값 | 설명 |
+|---------|-------|------|
+| `token` | — | `ADMIN_TOKEN` 환경변수와 일치해야 함. 미설정 시 토큰 불필요(개발 환경) |
+| `limit` | 50  | 최대 반환 건수 |
+
+**Response**
+
+```json
+{
+  "ok": true,
+  "total": 12,
+  "items": [
+    {
+      "inquiry_id": "INQ-260423-001",
+      "kind": "consult",
+      "received_at": "2026-04-23T21:15:33",
+      "customer_name": "홍길동",
+      "customer_phone": "010-1234-5678",
+      "email": "...",
+      "address": "...",
+      "space_type": "인테리어",
+      "area": 99.17,
+      "note": "저녁 시간 연락 선호",
+      "form_snapshot_keys": ["customer", "space", "site", "scopes", "finish", "schedule"]
+    }
+  ]
+}
+```
+
+최신순 정렬(`received_at` 내림차순).
+
+**401**: `ADMIN_TOKEN`이 설정되어 있으나 쿼리의 `token`과 불일치 시.
+
+---
+
+### POST /api/report
+
+enriched 데이터로 **풍부한 PDF/Excel 재생성** — 프론트에서 `/api/estimate/stream` 완료 후
+3단계 비교·공정계획·AI 코멘트까지 포함해 재호출.
+
+**Request**
+
+```json
+{
+  "inquiry_id": "INQ-260423-001",
+  "customer_name": "홍길동",
+  "customer_phone": "010-1234-5678",
+  "address": "서울 강남구 ...",
+  "type": "인테리어",
+  "area": 99.17,
+  "min_cost": 30000000,
+  "max_cost": 45000000,
+  "unit_price": 300000,
+  "breakdown": { "철거": 3200000, "바닥": 8500000 },
+  "work_items": [ ... ],
+  "summary": "AI 요약",
+  "validator_flags": [ ... ],
+  "expert_comment": "...",
+  "tiers": {
+    "budget":   { "label": "저가형", "min": 23400000, "max": 35100000, "recommended": false },
+    "standard": { "label": "표준형", "min": 30000000, "max": 45000000, "recommended": true },
+    "premium":  { "label": "고급형", "min": 41400000, "max": 62100000, "recommended": false }
+  },
+  "inclusions": {
+    "included": ["철거공사", "바닥공사"],
+    "separate": ["가전가구"],
+    "excluded": ["샷시/창호 교체 (미선택)"]
+  },
+  "schedule": {
+    "recommendedDays": 35,
+    "preferredStartDate": "2026-06-01",
+    "preferredEndDate":   "2026-07-10",
+    "risk": { "level": "normal", "label": "여유 있음", "message": "충분합니다" },
+    "phases": [
+      { "name": "준비/착공", "days": 3, "tasks": ["현장 인수", "자재 선정"] }
+    ]
+  },
+  "commentary": [
+    "표준형 구성이 가장 현실적인 시작안입니다.",
+    "사진·도면이 함께 제공되면 현장 추정 정확도가 크게 향상됩니다."
+  ]
+}
+```
+
+**Response**
+
+```json
+{
+  "ok": true,
+  "pdf_base64": "JVBERi0xLjQK...",
+  "excel_base64": "UEsDBBQAAAAIA...",
+  "pdf_error": null
+}
+```
+
+기존 `/api/estimate/stream`의 PDF는 raw 기준(breakdown + summary), 이 엔드포인트 PDF는 enriched(3단계·공정계획·코멘트 포함).
+
+---
+
 ## 관련 페이지
 
 - [architecture.md](architecture.md)
 - [validator-rules.md](validator-rules.md)
+- [known-issues.md](known-issues.md)
