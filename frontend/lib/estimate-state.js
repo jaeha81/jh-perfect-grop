@@ -104,6 +104,30 @@ export function estimateReducer(state, action) {
   switch (action.type) {
     case 'RESET':
       return createInitialState();
+
+    case 'HYDRATE': {
+      // draft가 있는 필드만 덮어쓰기 (unknown 키는 무시)
+      const base = createInitialState();
+      const d = action.draft || {};
+      return {
+        ...base,
+        step: typeof d.step === 'number' ? d.step : base.step,
+        inquiryId: d.inquiryId || base.inquiryId,
+        createdAt: d.createdAt || base.createdAt,
+        customer: { ...base.customer, ...(d.customer || {}) },
+        space: { ...base.space, ...(d.space || {}) },
+        site: { ...base.site, ...(d.site || {}) },
+        scopes: {
+          selected: Array.isArray(d.scopes?.selected) ? d.scopes.selected : base.scopes.selected,
+          conditional: { ...base.scopes.conditional, ...(d.scopes?.conditional || {}) },
+        },
+        finish: { ...base.finish, ...(d.finish || {}) },
+        schedule: { ...base.schedule, ...(d.schedule || {}) },
+        // uploads base64는 draft에 저장되지 않음 — 빈 배열로 리셋
+        uploads: { photos: [], drawings: [] },
+        additionalRequests: d.additionalRequests || '',
+      };
+    }
     case 'GOTO_STEP':
       return { ...state, step: action.step };
     case 'NEXT_STEP':

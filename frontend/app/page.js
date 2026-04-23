@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 
 import { createInitialState, estimateReducer, STEPS } from '@/lib/estimate-state';
 import { buildBackendDescription } from '@/lib/estimate-description';
 import { enrichEstimate, generateCommentary } from '@/lib/estimate-engine';
 import { buildScheduleInfo } from '@/lib/estimate-schedule';
 import { mapSpaceTypeToBackend } from '@/data/estimate-options';
+import { saveDraft, loadDraft, clearDraft, isMeaningfulDraft } from '@/lib/estimate-storage';
 
 import StepHeader from '@/components/estimate/StepHeader';
 import StepLanding from '@/components/estimate/StepLanding';
@@ -26,10 +27,19 @@ import ResultProcessPlan from '@/components/estimate/ResultProcessPlan';
 import ResultCommentary from '@/components/estimate/ResultCommentary';
 import ResultDisclaimers from '@/components/estimate/ResultDisclaimers';
 import ResultActions from '@/components/estimate/ResultActions';
+import ResumeBanner from '@/components/estimate/ResumeBanner';
 
 export default function Home() {
   const [state, dispatch] = useReducer(estimateReducer, undefined, createInitialState);
   const scrollAnchor = useRef(null);
+  const [draft, setDraft] = useState(null);
+  const saveTimer = useRef(null);
+
+  // 초기 마운트 — draft 감지
+  useEffect(() => {
+    const d = loadDraft();
+    if (d && isMeaningfulDraft(d)) setDraft(d);
+  }, []);
 
   // 단계 이동 시 스크롤 상단
   useEffect(() => {
@@ -37,6 +47,38 @@ export default function Home() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [state.step]);
+
+  // 폼 변경 시 debounced 자동저장 (분석/결과 단계는 제외)
+  useEffect(() => {
+    if (state.step === STEPS.ANALYZING || state.step === STEPS.RESULT) return;
+    if (state.step === STEPS.LANDING) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveDraft(state);
+    }, 600);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [state.step, state.customer, state.space, state.site, state.scopes, state.finish, state.schedule, state.additionalRequests]);
+
+  // 견적 완료 시 draft 제거
+  useEffect(() => {
+    if (state.step === STEPS.RESULT && state.result) {
+      clearDraft();
+      setDraft(null);
+    }
+  }, [state.step, state.result]);
+
+  function resumeDraft() {
+    if (!draft) return;
+    dispatch({ type: 'HYDRATE', draft });
+    setDraft(null);
+  }
+
+  function discardDraft() {
+    clearDraft();
+    setDraft(null);
+  }
 
   function nextStep() {
     dispatch({ type: 'NEXT_STEP' });
@@ -57,6 +99,11 @@ export default function Home() {
       area: parseFloat(state.space.totalArea),
       description,
       ...(firstPhoto ? { image_base64: firstPhoto.base64 } : {}),
+      // v2 optional 메타 — 백엔드가 수용하지 않아도 무해
+      customer_name: state.customer.customerName || null,
+      customer_phone: state.customer.phone || null,
+      address: state.customer.address || null,
+      inquiry_id: state.inquiryId || null,
     };
 
     try {
@@ -125,6 +172,8 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       if (!window.confirm('처음부터 다시 시작할까요? 입력하신 정보는 삭제됩니다.')) return;
     }
+    clearDraft();
+    setDraft(null);
     dispatch({ type: 'RESET' });
   }
 
@@ -141,7 +190,12 @@ export default function Home() {
         )}
 
         {state.step === STEPS.LANDING && (
-          <StepLanding onStart={() => dispatch({ type: 'GOTO_STEP', step: STEPS.CUSTOMER })} />
+          <>
+            {draft && (
+              <ResumeBanner draft={draft} onResume={resumeDraft} onDiscard={discardDraft} />
+            )}
+            <StepLanding onStart={() => dispatch({ type: 'GOTO_STEP', step: STEPS.CUSTOMER })} />
+          </>
         )}
 
         {state.step === STEPS.CUSTOMER && (

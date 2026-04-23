@@ -95,6 +95,25 @@ def run_reporter(estimate_data: dict) -> str | None:
         pdf.set_text_color(0, 0, 0)
         pdf.ln(6)
 
+        # ── 고객 정보 (v2 optional) ──────────────────
+        customer_name = estimate_data.get("customer_name")
+        address = estimate_data.get("address")
+        inquiry_id = estimate_data.get("inquiry_id")
+        if customer_name or address or inquiry_id:
+            pdf.set_font(font_name, _bold_style, 12)
+            pdf.cell(0, 8, "■ 견적 요청 정보", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font(font_name, "", 10)
+            meta_rows = []
+            if inquiry_id:     meta_rows.append(("요청번호", inquiry_id))
+            if customer_name:  meta_rows.append(("고객명", customer_name))
+            if address:        meta_rows.append(("현장 주소", address))
+            for label, value in meta_rows:
+                pdf.set_font(font_name, _bold_style, 10)
+                pdf.cell(50, 7, label, border="B")
+                pdf.set_font(font_name, "", 10)
+                pdf.cell(0, 7, str(value), border="B", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(4)
+
         # ── 공사 개요 ─────────────────────────────────
         pdf.set_font(font_name, _bold_style, 12)
         pdf.cell(0, 8, "■ 공사 개요", new_x="LMARGIN", new_y="NEXT")

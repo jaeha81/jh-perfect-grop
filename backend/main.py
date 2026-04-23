@@ -55,6 +55,11 @@ class EstimateRequest(BaseModel):
     area: float = Field(gt=0)
     type: Literal["인테리어", "신축", "리모델링"]
     image_base64: Optional[str] = None   # Wave 4 SCANNER
+    # v2 고도화 — 리포트/상담 연계용 optional 메타 (파이프라인 로직에는 영향 없음)
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    inquiry_id: Optional[str] = None
 
 
 class RecalculateRequest(BaseModel):
@@ -138,6 +143,11 @@ async def estimate(req: EstimateRequest):
         "is_valid": validator_out.get("is_valid", True),
         "rule_engine_version": validator_out.get("rule_engine_version", ""),
         "scanner_context": scanner_context,
+        # v2 optional 메타 — reporter가 존재 시 헤더에 렌더
+        "customer_name": req.customer_name,
+        "customer_phone": req.customer_phone,
+        "address": req.address,
+        "inquiry_id": req.inquiry_id,
     }
 
     # ── 병렬: Agent5 PDF + Excel 동시 생성 ────────────
@@ -216,6 +226,11 @@ async def estimate_stream(req: EstimateRequest):
                 "is_valid": validator_out.get("is_valid", True),
                 "rule_engine_version": validator_out.get("rule_engine_version", ""),
                 "scanner_context": scanner_context,
+                # v2 optional 메타
+                "customer_name": req.customer_name,
+                "customer_phone": req.customer_phone,
+                "address": req.address,
+                "inquiry_id": req.inquiry_id,
             }
 
             _gather3 = await asyncio.gather(
