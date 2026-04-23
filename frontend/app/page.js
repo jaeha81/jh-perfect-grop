@@ -160,6 +160,44 @@ export default function Home() {
       enriched.commentary = generateCommentary(state, enriched);
 
       dispatch({ type: 'SET_RESULT', raw: finalData, enriched });
+
+      // enriched PDF/Excel 비동기 재생성 — 실패해도 기존 버전 유지
+      fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inquiry_id: enriched.inquiryId || null,
+          customer_name: state.customer.customerName || null,
+          customer_phone: state.customer.phone || null,
+          address: state.customer.address || null,
+          type: enriched.type || null,
+          area: enriched.area ? Number(enriched.area) : null,
+          min_cost: enriched.tiers?.standard?.min || null,
+          max_cost: enriched.tiers?.standard?.max || null,
+          unit_price: finalData.unit_price || null,
+          breakdown: enriched.detailedBreakdown || null,
+          work_items: enriched.workItems || null,
+          summary: enriched.summary || null,
+          validator_flags: enriched.validatorFlags || null,
+          expert_comment: enriched.expertComment || null,
+          tiers: enriched.tiers || null,
+          inclusions: enriched.inclusions || null,
+          adjustments: enriched.adjustments || null,
+          schedule: enriched.schedule || null,
+          commentary: enriched.commentary || null,
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.pdf_base64 || d?.excel_base64) {
+            dispatch({
+              type: 'UPDATE_REPORT_FILES',
+              pdfBase64: d.pdf_base64 || null,
+              excelBase64: d.excel_base64 || null,
+            });
+          }
+        })
+        .catch((e) => console.warn('[report] enriched 재생성 실패:', e));
     } catch (err) {
       dispatch({ type: 'SET_ERROR', message: err?.message || '알 수 없는 오류' });
       dispatch({ type: 'GOTO_STEP', step: STEPS.SCHEDULE });

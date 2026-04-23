@@ -78,6 +78,32 @@ class InquiryRequest(BaseModel):
     form_snapshot: Optional[dict] = None
 
 
+class ReportRequest(BaseModel):
+    """enriched 데이터 기반 PDF/Excel 재생성 — 프론트 계산 결과를 수용"""
+    # 기본 (백엔드 raw 결과)
+    inquiry_id: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    type: Optional[str] = None
+    area: Optional[float] = None
+    min_cost: Optional[int] = None
+    max_cost: Optional[int] = None
+    unit_price: Optional[int] = None
+    breakdown: Optional[dict] = None
+    work_items: Optional[list] = None
+    summary: Optional[str] = None
+    validator_flags: Optional[list] = None
+    expert_comment: Optional[str] = None
+    # enriched (프론트 계산값)
+    tiers: Optional[dict] = None          # {budget:{min,max,label,desc,recommended}, ...}
+    detailed_breakdown: Optional[dict] = None
+    inclusions: Optional[dict] = None     # {included:[], separate:[], excluded:[]}
+    adjustments: Optional[dict] = None
+    schedule: Optional[dict] = None       # {recommendedDays, risk, phases:[...]}
+    commentary: Optional[list] = None     # ["코멘트1", ...]
+
+
 class RecalculateRequest(BaseModel):
     type: str
     area: float
@@ -436,6 +462,29 @@ async def create_inquiry(req: InquiryRequest):
             if req.kind == "consult"
             else "현장 방문 상담 요청이 접수되었습니다. 일정 조율을 위해 곧 연락드립니다."
         ),
+    }
+
+
+@app.post("/api/report")
+async def generate_report(req: ReportRequest):
+    """enriched 데이터로 PDF + Excel 재생성 — 프론트 계산 결과(tiers/schedule/commentary 등) 포함"""
+    data = req.model_dump()
+    # breakdown 없으면 detailed_breakdown 대체 사용
+    if not data.get("breakdown") and data.get("detailed_breakdown"):
+        data["breakdown"] = data["detailed_breakdown"]
+    _gather = await asyncio.gather(
+        asyncio.to_thread(_run_reporter_safe, data),
+        asyncio.to_thread(run_reporter_excel, data),
+        return_exceptions=True,
+    )
+    pdf_res = _gather[0] if not isinstance(_gather[0], Exception) else None
+    excel_b64 = _gather[1] if not isinstance(_gather[1], Exception) else None
+    pdf_b64, pdf_err = pdf_res if pdf_res is not None else (None, str(_gather[0]))
+    return {
+        "ok": True,
+        "pdf_base64": pdf_b64,
+        "excel_base64": excel_b64,
+        "pdf_error": pdf_err,
     }
 
 

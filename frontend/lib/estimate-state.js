@@ -236,6 +236,17 @@ export function estimateReducer(state, action) {
         agentProgress: { activeStep: -1, doneSteps: [0, 1, 2, 3, 4], parallelSteps: state.agentProgress.parallelSteps },
       };
 
+    case 'UPDATE_REPORT_FILES':
+      if (!state.result) return state;
+      return {
+        ...state,
+        result: {
+          ...state.result,
+          pdfBase64: action.pdfBase64 ?? state.result.pdfBase64,
+          excelBase64: action.excelBase64 ?? state.result.excelBase64,
+        },
+      };
+
     default:
       return state;
   }
