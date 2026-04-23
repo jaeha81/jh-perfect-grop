@@ -60,6 +60,22 @@ class EstimateRequest(BaseModel):
     customer_phone: Optional[str] = None
     address: Optional[str] = None
     inquiry_id: Optional[str] = None
+    # 관리자 대시보드 확장 대비 — 전체 폼 덤프를 수용 (현재는 저장하지 않음)
+    form_snapshot: Optional[dict] = None
+
+
+class InquiryRequest(BaseModel):
+    """상담 요청 — 입력 정보 + 선택된 CTA 종류"""
+    inquiry_id: Optional[str] = None
+    kind: Literal["consult", "visit"] = "consult"
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    space_type: Optional[str] = None
+    area: Optional[float] = None
+    note: Optional[str] = None
+    form_snapshot: Optional[dict] = None
 
 
 class RecalculateRequest(BaseModel):
@@ -367,6 +383,60 @@ async def recalculate(req: RecalculateRequest):
         logger.error("recalculate PDF 생성 실패: %s", pdf_error)
 
     return estimate_data
+
+
+# ── 상담 요청 접수 (MVP) ────────────────────────────────────
+#   NOTE: 프로덕션 환경에서는 외부 DB(Supabase 등) 연동이 필요합니다.
+#   Railway/Vercel 컨테이너는 휘발성이므로 파일 저장은 재배포 시 초실됩니다.
+#   현재 MVP: stdout 로그 + JSONL 파일 append (컨테이너 수명 내 조회 가능).
+
+_INQUIRY_LOG_PATH = os.path.join(os.path.dirname(__file__), "data", "inquiries.jsonl")
+
+
+@app.post("/api/inquiries")
+async def create_inquiry(req: InquiryRequest):
+    """상담/방문 요청 접수 — 최소 구현. 확인용 inquiry_id와 접수 시각을 반환."""
+    from datetime import datetime as _dt
+
+    inquiry_id = req.inquiry_id or f"INQ-{_dt.now().strftime('%y%m%d')}-{_dt.now().microsecond % 1000:03d}"
+    received_at = _dt.now().isoformat(timespec="seconds")
+    record = {
+        "inquiry_id": inquiry_id,
+        "kind": req.kind,
+        "received_at": received_at,
+        "customer_name": req.customer_name,
+        "customer_phone": req.customer_phone,
+        "email": req.email,
+        "address": req.address,
+        "space_type": req.space_type,
+        "area": req.area,
+        "note": req.note,
+        # form_snapshot은 용량이 커서 로그에는 길이만 기록
+        "form_snapshot_keys": list((req.form_snapshot or {}).keys()) if req.form_snapshot else None,
+    }
+
+    # 1) stdout 로그 — 컨테이너 로그에서 바로 확인 가능
+    logger.info("inquiry received: %s %s %s", record["inquiry_id"], record["kind"], record["customer_phone"])
+
+    # 2) JSONL 파일 append (휘발성이지만 개발 환경에서 확인용)
+    try:
+        os.makedirs(os.path.dirname(_INQUIRY_LOG_PATH), exist_ok=True)
+        with open(_INQUIRY_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.warning("inquiry JSONL append 실패: %s", e)
+
+    return {
+        "ok": True,
+        "inquiry_id": inquiry_id,
+        "kind": req.kind,
+        "received_at": received_at,
+        "message": (
+            "상담 요청이 접수되었습니다. 영업일 기준 1일 이내 담당자가 연락드립니다."
+            if req.kind == "consult"
+            else "현장 방문 상담 요청이 접수되었습니다. 일정 조율을 위해 곧 연락드립니다."
+        ),
+    }
 
 
 def _run_reporter_safe(estimate_data: dict) -> tuple[str | None, str | None]:

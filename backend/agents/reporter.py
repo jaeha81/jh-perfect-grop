@@ -279,6 +279,20 @@ def run_reporter_excel(estimate_data: dict) -> str | None:
         ws[f'A{row}'].alignment = Alignment(horizontal='center')
         row += 2
 
+        # 고객 정보 (v2 optional) — 값이 있을 때만 섹션 출력
+        meta_rows = []
+        if estimate_data.get('inquiry_id'):    meta_rows.append(('요청번호', estimate_data['inquiry_id']))
+        if estimate_data.get('customer_name'): meta_rows.append(('고객명', estimate_data['customer_name']))
+        if estimate_data.get('address'):       meta_rows.append(('현장 주소', estimate_data['address']))
+        if meta_rows:
+            for label, value in meta_rows:
+                ws[f'A{row}'] = label
+                ws[f'A{row}'].font = Font(name='맑은 고딕', bold=True, color=gray)
+                ws[f'B{row}'] = str(value)
+                ws[f'B{row}'].font = Font(name='맑은 고딕', color='E8E6F0')
+                row += 1
+            row += 1
+
         # 기본 정보
         info = [
             ('공사 유형', estimate_data.get('type', '-')),

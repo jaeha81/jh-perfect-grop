@@ -260,7 +260,7 @@ export default function Home() {
             <ResultActions
               enriched={state.result}
               onReset={reset}
-              customerPhone={state.customer.phone}
+              customer={state.customer}
             />
           </>
         )}
