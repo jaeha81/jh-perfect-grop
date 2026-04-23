@@ -55,6 +55,53 @@ class EstimateRequest(BaseModel):
     area: float = Field(gt=0)
     type: Literal["인테리어", "신축", "리모델링"]
     image_base64: Optional[str] = None   # Wave 4 SCANNER
+    # v2 고도화 — 리포트/상담 연계용 optional 메타 (파이프라인 로직에는 영향 없음)
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    inquiry_id: Optional[str] = None
+    # 관리자 대시보드 확장 대비 — 전체 폼 덤프를 수용 (현재는 저장하지 않음)
+    form_snapshot: Optional[dict] = None
+
+
+class InquiryRequest(BaseModel):
+    """상담 요청 — 입력 정보 + 선택된 CTA 종류"""
+    inquiry_id: Optional[str] = None
+    kind: Literal["consult", "visit"] = "consult"
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    space_type: Optional[str] = None
+    area: Optional[float] = None
+    note: Optional[str] = None
+    form_snapshot: Optional[dict] = None
+
+
+class ReportRequest(BaseModel):
+    """enriched 데이터 기반 PDF/Excel 재생성 — 프론트 계산 결과를 수용"""
+    # 기본 (백엔드 raw 결과)
+    inquiry_id: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    type: Optional[str] = None
+    area: Optional[float] = None
+    min_cost: Optional[int] = None
+    max_cost: Optional[int] = None
+    unit_price: Optional[int] = None
+    breakdown: Optional[dict] = None
+    work_items: Optional[list] = None
+    summary: Optional[str] = None
+    validator_flags: Optional[list] = None
+    expert_comment: Optional[str] = None
+    # enriched (프론트 계산값)
+    tiers: Optional[dict] = None          # {budget:{min,max,label,desc,recommended}, ...}
+    detailed_breakdown: Optional[dict] = None
+    inclusions: Optional[dict] = None     # {included:[], separate:[], excluded:[]}
+    adjustments: Optional[dict] = None
+    schedule: Optional[dict] = None       # {recommendedDays, risk, phases:[...]}
+    commentary: Optional[list] = None     # ["코멘트1", ...]
 
 
 class RecalculateRequest(BaseModel):
@@ -138,6 +185,11 @@ async def estimate(req: EstimateRequest):
         "is_valid": validator_out.get("is_valid", True),
         "rule_engine_version": validator_out.get("rule_engine_version", ""),
         "scanner_context": scanner_context,
+        # v2 optional 메타 — reporter가 존재 시 헤더에 렌더
+        "customer_name": req.customer_name,
+        "customer_phone": req.customer_phone,
+        "address": req.address,
+        "inquiry_id": req.inquiry_id,
     }
 
     # ── 병렬: Agent5 PDF + Excel 동시 생성 ────────────
@@ -216,6 +268,11 @@ async def estimate_stream(req: EstimateRequest):
                 "is_valid": validator_out.get("is_valid", True),
                 "rule_engine_version": validator_out.get("rule_engine_version", ""),
                 "scanner_context": scanner_context,
+                # v2 optional 메타
+                "customer_name": req.customer_name,
+                "customer_phone": req.customer_phone,
+                "address": req.address,
+                "inquiry_id": req.inquiry_id,
             }
 
             _gather3 = await asyncio.gather(
@@ -352,6 +409,114 @@ async def recalculate(req: RecalculateRequest):
         logger.error("recalculate PDF 생성 실패: %s", pdf_error)
 
     return estimate_data
+
+
+# ── 상담 요청 접수 (MVP) ────────────────────────────────────
+#   NOTE: 프로덕션 환경에서는 외부 DB(Supabase 등) 연동이 필요합니다.
+#   Railway/Vercel 컨테이너는 휘발성이므로 파일 저장은 재배포 시 초실됩니다.
+#   현재 MVP: stdout 로그 + JSONL 파일 append (컨테이너 수명 내 조회 가능).
+
+_INQUIRY_LOG_PATH = os.path.join(os.path.dirname(__file__), "data", "inquiries.jsonl")
+
+
+@app.get("/api/inquiries")
+async def list_inquiries(token: Optional[str] = None, limit: int = 50):
+    """관리자 상담 목록 조회 — 환경변수 ADMIN_TOKEN 일치 시 허용. 미설정 시 토큰 불필요(개발 환경)."""
+    from fastapi import HTTPException
+    admin_token = os.getenv("ADMIN_TOKEN", "")
+    if admin_token and token != admin_token:
+        raise HTTPException(status_code=401, detail="관리자 토큰이 올바르지 않습니다.")
+
+    records: list[dict] = []
+    if os.path.exists(_INQUIRY_LOG_PATH):
+        try:
+            with open(_INQUIRY_LOG_PATH, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            records.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            pass
+        except Exception as e:
+            logger.warning("inquiries 읽기 실패: %s", e)
+
+    # 최신 순 정렬 후 limit 적용
+    records.sort(key=lambda r: r.get("received_at", ""), reverse=True)
+    return {
+        "ok": True,
+        "total": len(records),
+        "items": records[:limit],
+    }
+
+
+@app.post("/api/inquiries")
+async def create_inquiry(req: InquiryRequest):
+    """상담/방문 요청 접수 — 최소 구현. 확인용 inquiry_id와 접수 시각을 반환."""
+    from datetime import datetime as _dt
+
+    inquiry_id = req.inquiry_id or f"INQ-{_dt.now().strftime('%y%m%d')}-{_dt.now().microsecond % 1000:03d}"
+    received_at = _dt.now().isoformat(timespec="seconds")
+    record = {
+        "inquiry_id": inquiry_id,
+        "kind": req.kind,
+        "received_at": received_at,
+        "customer_name": req.customer_name,
+        "customer_phone": req.customer_phone,
+        "email": req.email,
+        "address": req.address,
+        "space_type": req.space_type,
+        "area": req.area,
+        "note": req.note,
+        # form_snapshot은 용량이 커서 로그에는 길이만 기록
+        "form_snapshot_keys": list((req.form_snapshot or {}).keys()) if req.form_snapshot else None,
+    }
+
+    # 1) stdout 로그 — 컨테이너 로그에서 바로 확인 가능
+    logger.info("inquiry received: %s %s %s", record["inquiry_id"], record["kind"], record["customer_phone"])
+
+    # 2) JSONL 파일 append (휘발성이지만 개발 환경에서 확인용)
+    try:
+        os.makedirs(os.path.dirname(_INQUIRY_LOG_PATH), exist_ok=True)
+        with open(_INQUIRY_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.warning("inquiry JSONL append 실패: %s", e)
+
+    return {
+        "ok": True,
+        "inquiry_id": inquiry_id,
+        "kind": req.kind,
+        "received_at": received_at,
+        "message": (
+            "상담 요청이 접수되었습니다. 영업일 기준 1일 이내 담당자가 연락드립니다."
+            if req.kind == "consult"
+            else "현장 방문 상담 요청이 접수되었습니다. 일정 조율을 위해 곧 연락드립니다."
+        ),
+    }
+
+
+@app.post("/api/report")
+async def generate_report(req: ReportRequest):
+    """enriched 데이터로 PDF + Excel 재생성 — 프론트 계산 결과(tiers/schedule/commentary 등) 포함"""
+    data = req.model_dump()
+    # breakdown 없으면 detailed_breakdown 대체 사용
+    if not data.get("breakdown") and data.get("detailed_breakdown"):
+        data["breakdown"] = data["detailed_breakdown"]
+    _gather = await asyncio.gather(
+        asyncio.to_thread(_run_reporter_safe, data),
+        asyncio.to_thread(run_reporter_excel, data),
+        return_exceptions=True,
+    )
+    pdf_res = _gather[0] if not isinstance(_gather[0], Exception) else None
+    excel_b64 = _gather[1] if not isinstance(_gather[1], Exception) else None
+    pdf_b64, pdf_err = pdf_res if pdf_res is not None else (None, str(_gather[0]))
+    return {
+        "ok": True,
+        "pdf_base64": pdf_b64,
+        "excel_base64": excel_b64,
+        "pdf_error": pdf_err,
+    }
 
 
 def _run_reporter_safe(estimate_data: dict) -> tuple[str | None, str | None]:

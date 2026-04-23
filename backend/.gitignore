@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .env
 *.db
+data/inquiries.jsonl
+venv/
+.venv/
