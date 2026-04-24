@@ -4,6 +4,38 @@
 
 ---
 
+## [2026-04-24] Warm Orange 디자인 시스템 전면 적용 완료
+
+- **범위**: 전체 estimate 컴포넌트 19개 파일 — cold purple/blue-gray 완전 제거
+- **커밋**: `449e5b8` (design), `9e8ccdb` (package-lock)
+- **변경 색상 규칙**:
+  - `#a09eb8` → `#a09080` (label 색상)
+  - `#6b6a80` → `#6b5f50` (muted 색상)
+  - `#c4c2d8` → `#c8b8a8` (dim text)
+  - `#a78bfa` → `#FF8C5A` (accent 색상)
+  - `rgba(124,106,247,X)` → `rgba(255,107,53,X)` (orange tint)
+  - `linear-gradient(purple)` → `linear-gradient(#FF6B35, #CC4E1F)`
+  - `bg-[#13131a]` → `bg-[#13100d]`
+- **의도적 보존 색상** (시맨틱):
+  - teal `#22d3a0` — 선택 완료 / 체크 / ok 상태
+  - yellow `#fbbf24` — 경고 / sketch
+  - red `#f87171` — 오류 / 제외 항목
+- **수정 파일 목록**:
+  - `frontend/app/globals.css`
+  - `frontend/components/estimate/FormPrimitives.jsx`
+  - `StepCustomerInfo`, `StepSpaceInfo`, `StepFinishOptions`, `StepScopes`, `StepScheduleUpload`
+  - `StepHeader`, `StepNav`
+  - `ResumeBanner`, `ResultSummary`, `ResultComparisonCards`
+  - `ResultActions`, `ResultCommentary`, `ResultDetailEstimate`
+  - `ResultSchedule`, `ResultProcessPlan`, `ResultInclusions`, `ResultDisclaimers`
+- **다음 세션 이어받기 포인트**:
+  - 디자인 작업 100% 완료 — 추가 색상 수정 불필요
+  - Vercel 자동 배포 완료 상태
+  - 남은 과제: `inquiries.jsonl` → Supabase 전환, `ADMIN_TOKEN` 설정, PDF 서버사이드 변환
+- **상태**: ✅ 완료 — master 브랜치 배포됨
+
+---
+
 ## [2026-04-24] AI 윤리·법령 준수 — 3건 수정 완료
 
 - **범위**: 개인정보 보호법 제15조/29조 + AI 기본법 제34조 대응
