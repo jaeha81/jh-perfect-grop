@@ -63,12 +63,12 @@ export default function StepNav({
           className="btn-primary flex-1 py-3.5 rounded-xl text-white text-[1rem] font-bold"
           style={{
             background: canNext
-              ? 'linear-gradient(135deg,#7c6af7,#5b4fd4)'
-              : 'linear-gradient(135deg,#3d3560,#2e2850)',
+              ? 'linear-gradient(135deg,#FF6B35,#CC4E1F)'
+              : 'linear-gradient(135deg,#3d2010,#2a1508)',
             opacity: canNext ? 1 : 0.55,
             cursor: 'pointer',
             border: 'none',
-            boxShadow: canNext ? '0 6px 24px rgba(124,106,247,0.35)' : 'none',
+            boxShadow: canNext ? '0 6px 24px rgba(255,107,53,0.38)' : 'none',
           }}
         >
           {nextLabel} →

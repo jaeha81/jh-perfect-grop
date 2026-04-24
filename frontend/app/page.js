@@ -223,7 +223,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-3 sm:px-6 py-8 sm:py-12" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,106,247,0.08) 0%, transparent 60%), #0a0a0f' }}>
+    <div className="min-h-screen flex flex-col items-center px-3 sm:px-6 py-8 sm:py-12" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,107,53,0.08) 0%, transparent 60%), #0a0806' }}>
       <div className="w-full max-w-[760px] mx-auto step-enter" ref={scrollAnchor}>
         {state.step >= STEPS.CUSTOMER && state.step <= STEPS.SCHEDULE && (
           <StepHeader

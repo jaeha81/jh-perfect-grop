@@ -16,7 +16,7 @@ export function Section({ title, desc, children }) {
           <div
             style={{
               width: 3, height: 14, borderRadius: 2,
-              background: 'linear-gradient(180deg,#7c6af7,#22d3a0)',
+              background: 'linear-gradient(180deg,#FF6B35,#FF8C5A)',
               flexShrink: 0,
             }}
           />
@@ -120,13 +120,13 @@ export function RadioGroup({ value, onChange, options, name }) {
             onClick={() => onChange(v)}
             className="px-4 py-2 rounded-xl text-[0.86rem] font-medium"
             style={{
-              background: active ? 'rgba(124,106,247,0.18)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${active ? 'rgba(124,106,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
-              color: active ? '#c4b5fd' : '#a09eb8',
+              background: active ? 'rgba(255,107,53,0.14)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${active ? 'rgba(255,107,53,0.46)' : 'rgba(255,255,255,0.08)'}`,
+              color: active ? '#FF8C5A' : '#a09080',
               cursor: 'pointer',
               transition: 'all 0.18s ease',
               transform: active ? 'translateY(-1px)' : 'none',
-              boxShadow: active ? '0 4px 14px rgba(124,106,247,0.2)' : 'none',
+              boxShadow: active ? '0 4px 14px rgba(255,107,53,0.18)' : 'none',
             }}
           >
             {l}
@@ -186,12 +186,12 @@ export function BooleanToggle({ value, onChange, labels = ['예', '아니오'] }
             onClick={() => onChange(b)}
             className="px-4 py-2.5 rounded-xl text-[0.86rem] font-medium flex-1"
             style={{
-              background: active ? 'rgba(124,106,247,0.18)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${active ? 'rgba(124,106,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
-              color: active ? '#c4b5fd' : '#a09eb8',
+              background: active ? 'rgba(255,107,53,0.14)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${active ? 'rgba(255,107,53,0.46)' : 'rgba(255,255,255,0.08)'}`,
+              color: active ? '#FF8C5A' : '#a09080',
               cursor: 'pointer',
               transition: 'all 0.18s ease',
-              boxShadow: active ? '0 4px 14px rgba(124,106,247,0.2)' : 'none',
+              boxShadow: active ? '0 4px 14px rgba(255,107,53,0.18)' : 'none',
             }}
           >
             {labels[i]}

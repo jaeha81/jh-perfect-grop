@@ -29,7 +29,7 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
             {current ? `STEP ${current.step} / ${total}` : ''}
           </div>
           {current && (
-            <div className="text-[#a78bfa] text-[0.88rem] font-semibold mt-0.5">
+            <div className="text-[0.88rem] font-semibold mt-0.5" style={{ color: '#FF6B35' }}>
               {current.label}
             </div>
           )}
@@ -68,13 +68,13 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
                 className="flex items-center gap-1 text-[0.71rem] px-2 py-0.5 rounded-full transition-all duration-300"
                 style={{
                   background: active
-                    ? 'rgba(124,106,247,0.18)'
+                    ? 'rgba(255,107,53,0.16)'
                     : done
                     ? 'rgba(34,211,160,0.1)'
                     : 'transparent',
-                  color: active ? '#a78bfa' : done ? '#22d3a0' : '#3a3a50',
+                  color: active ? '#FF6B35' : done ? '#22d3a0' : '#3a3a50',
                   fontWeight: active ? 600 : 400,
-                  border: active ? '1px solid rgba(124,106,247,0.25)' : '1px solid transparent',
+                  border: active ? '1px solid rgba(255,107,53,0.28)' : '1px solid transparent',
                 }}
               >
                 {done ? '✓' : s.step}. {s.label}

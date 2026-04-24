@@ -6,7 +6,7 @@ export default function StepLanding({ onStart }) {
       icon: '🏗',
       title: '18년 현장 경험 기반',
       desc: '실무 시공/견적/설계 경력을 VALIDATOR에 내재화하여 이상치·누락을 잡습니다.',
-      color: '#7c6af7',
+      color: '#FF6B35',
     },
     {
       icon: '🤖',
@@ -34,9 +34,9 @@ export default function StepLanding({ onStart }) {
       <div
         className="animate-fade-in-up relative overflow-hidden rounded-3xl p-10 sm:p-14 mb-6 text-center"
         style={{
-          background: 'linear-gradient(160deg,#16162a 0%,#13131a 60%,#0e1520 100%)',
-          border: '1px solid rgba(124,106,247,0.2)',
-          boxShadow: '0 4px 60px rgba(124,106,247,0.12), inset 0 1px 0 rgba(255,255,255,0.05)',
+          background: 'linear-gradient(160deg,#1a1008 0%,#13100d 60%,#0a0806 100%)',
+          border: '1px solid rgba(255,107,53,0.22)',
+          boxShadow: '0 4px 60px rgba(255,107,53,0.12), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
       >
         {/* 배경 오브 */}
@@ -45,7 +45,7 @@ export default function StepLanding({ onStart }) {
           style={{
             position: 'absolute', top: '-60px', left: '-60px',
             width: '280px', height: '280px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(124,106,247,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(255,107,53,0.16) 0%, transparent 70%)',
             animation: 'orb 12s ease-in-out infinite',
             pointerEvents: 'none',
           }}
@@ -55,7 +55,7 @@ export default function StepLanding({ onStart }) {
           style={{
             position: 'absolute', bottom: '-40px', right: '-40px',
             width: '220px', height: '220px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,211,160,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(34,211,160,0.12) 0%, transparent 70%)',
             animation: 'orb 15s ease-in-out infinite reverse',
             pointerEvents: 'none',
           }}
@@ -65,13 +65,13 @@ export default function StepLanding({ onStart }) {
         <div className="animate-fade-in delay-100 inline-flex items-center gap-2 mb-5">
           <span
             style={{
-              background: 'rgba(124,106,247,0.12)',
-              border: '1px solid rgba(124,106,247,0.3)',
+              background: 'rgba(255,107,53,0.12)',
+              border: '1px solid rgba(255,107,53,0.32)',
               borderRadius: '9999px',
               padding: '4px 14px',
               fontSize: '0.75rem',
               fontWeight: 600,
-              color: '#a78bfa',
+              color: '#FF6B35',
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
             }}
@@ -84,7 +84,7 @@ export default function StepLanding({ onStart }) {
         <h1
           className="animate-fade-in-up delay-100 text-[2.6rem] sm:text-[3.4rem] font-extrabold leading-[1.1] mb-0"
           style={{
-            background: 'linear-gradient(135deg,#a78bfa 0%,#7c6af7 40%,#22d3a0 100%)',
+            background: 'linear-gradient(135deg,#FFB347 0%,#FF6B35 45%,#22d3a0 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundSize: '200% 200%',
@@ -93,11 +93,11 @@ export default function StepLanding({ onStart }) {
           JH EstimateAI
         </h1>
 
-        <p className="animate-fade-in-up delay-200 text-[#c4c2d8] text-[1.05rem] sm:text-[1.1rem] mt-4 leading-[1.6] font-medium">
+        <p className="animate-fade-in-up delay-200 text-[#c4b8a8] text-[1.05rem] sm:text-[1.1rem] mt-4 leading-[1.6] font-medium">
           18년 현장 경험 기반 · 인테리어/건설 견적 자동화 AI
         </p>
 
-        <p className="animate-fade-in-up delay-250 text-[#6b6a80] text-[0.9rem] mt-3 leading-[1.7] max-w-[500px] mx-auto">
+        <p className="animate-fade-in-up delay-250 text-[#6b5f50] text-[0.9rem] mt-3 leading-[1.7] max-w-[500px] mx-auto">
           공간 유형과 공사 범위만 입력하면, 5개 에이전트가 저가·표준·고급
           비교견적과 공종별 세부 내역, 공사일정·공정계획까지 자동으로 정리해 드립니다.
         </p>
@@ -109,10 +109,10 @@ export default function StepLanding({ onStart }) {
             onClick={onStart}
             className="btn-primary inline-flex items-center gap-2 px-10 py-4 rounded-2xl text-white text-[1.1rem] font-bold"
             style={{
-              background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
+              background: 'linear-gradient(135deg,#FF6B35,#CC4E1F)',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 8px 32px rgba(124,106,247,0.4)',
+              boxShadow: '0 8px 32px rgba(255,107,53,0.42)',
               animation: 'pulseGlow 3s ease-in-out infinite',
             }}
           >
@@ -121,7 +121,7 @@ export default function StepLanding({ onStart }) {
           </button>
         </div>
 
-        <div className="animate-fade-in delay-500 text-[#4a4960] text-[0.78rem] mt-5 leading-[1.6]">
+        <div className="animate-fade-in delay-500 text-[#4a3e30] text-[0.78rem] mt-5 leading-[1.6]">
           입력하신 정보가 구체적일수록 견적 정확도가 높아집니다.
           <br className="hidden sm:block" />
           사진 및 도면을 함께 올리면 더 정밀한 분석이 가능합니다.
@@ -135,8 +135,8 @@ export default function StepLanding({ onStart }) {
             key={f.title}
             className={`card-hover animate-fade-in-up rounded-2xl p-6`}
             style={{
-              background: '#13131a',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: '#13100d',
+              border: '1px solid rgba(255,255,255,0.06)',
               animationDelay: `${0.1 + i * 0.08}s`,
             }}
           >
@@ -152,7 +152,7 @@ export default function StepLanding({ onStart }) {
             >
               {f.title}
             </div>
-            <div className="text-[#8b8a9e] text-[0.84rem] leading-[1.65]">{f.desc}</div>
+            <div className="text-[#7a6f60] text-[0.84rem] leading-[1.65]">{f.desc}</div>
           </div>
         ))}
       </div>
@@ -161,19 +161,19 @@ export default function StepLanding({ onStart }) {
       <div
         className="animate-fade-in-up delay-400 rounded-2xl px-6 py-5 text-[0.84rem] leading-[1.65]"
         style={{
-          background: 'rgba(124,106,247,0.05)',
-          border: '1px solid rgba(124,106,247,0.16)',
-          color: '#a09eb8',
+          background: 'rgba(255,107,53,0.05)',
+          border: '1px solid rgba(255,107,53,0.16)',
+          color: '#a09080',
         }}
       >
         <div className="flex items-center gap-2 mb-2">
           <span
             style={{
               width: 6, height: 6, borderRadius: '50%',
-              background: '#a78bfa', display: 'inline-block', flexShrink: 0,
+              background: '#FF6B35', display: 'inline-block', flexShrink: 0,
             }}
           />
-          <span className="text-[#a78bfa] font-semibold text-[0.88rem]">안내</span>
+          <span className="font-semibold text-[0.88rem]" style={{ color: '#FF6B35' }}>안내</span>
         </div>
         본 서비스의 견적은 입력 정보 기반 자동 분석 결과이며, 최종 견적은 현장 확인 후 확정됩니다.
         현장 실측·사진 분석 후 자재와 일정 조건에 따라 변동이 발생할 수 있습니다.

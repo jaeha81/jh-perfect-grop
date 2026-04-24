@@ -14,8 +14,8 @@ function SpinIcon() {
       width="18" height="18" viewBox="0 0 18 18" fill="none"
       style={{ animation: 'spin 0.8s linear infinite' }}
     >
-      <circle cx="9" cy="9" r="7" stroke="rgba(167,139,250,0.3)" strokeWidth="2" />
-      <path d="M9 2a7 7 0 0 1 7 7" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="9" cy="9" r="7" stroke="rgba(255,107,53,0.25)" strokeWidth="2" />
+      <path d="M9 2a7 7 0 0 1 7 7" stroke="#FF6B35" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -27,9 +27,9 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
     <div
       className="animate-fade-in rounded-3xl p-6 sm:p-10 mb-5"
       style={{
-        background: 'linear-gradient(160deg,#16162a 0%,#13131a 100%)',
-        border: '1px solid rgba(124,106,247,0.18)',
-        boxShadow: '0 4px 60px rgba(124,106,247,0.1)',
+        background: 'linear-gradient(160deg,#1a1008 0%,#13100d 100%)',
+        border: '1px solid rgba(255,107,53,0.18)',
+        boxShadow: '0 4px 60px rgba(255,107,53,0.08)',
       }}
     >
       {/* 헤더 */}
@@ -37,19 +37,19 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
         <div
           className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
           style={{
-            background: 'rgba(124,106,247,0.1)',
-            border: '1px solid rgba(124,106,247,0.25)',
+            background: 'rgba(255,107,53,0.1)',
+            border: '1px solid rgba(255,107,53,0.25)',
           }}
         >
           <span style={{ fontSize: '2rem' }}>🤖</span>
         </div>
-        <div className="text-[#a09eb8] text-[0.75rem] font-semibold tracking-[0.1em] uppercase mb-2">
+        <div className="text-[0.75rem] font-semibold tracking-[0.1em] uppercase mb-2" style={{ color: '#a09080' }}>
           에이전트 분석 중
         </div>
         <div className="text-[#e8e6f0] text-[1.05rem] font-semibold">
           5개 에이전트가 입력 정보를 분석하고 있습니다
         </div>
-        <div className="text-[#6b6a80] text-[0.86rem] mt-1">
+        <div className="text-[0.86rem] mt-1" style={{ color: '#6b5f50' }}>
           잠시만 기다려 주세요…
         </div>
 
@@ -63,7 +63,7 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
             style={{ width: `${donePct}%` }}
           />
         </div>
-        <div className="text-[#555] text-[0.72rem] mt-1.5">{donePct}% 완료</div>
+        <div className="text-[0.72rem] mt-1.5" style={{ color: '#555' }}>{donePct}% 완료</div>
       </div>
 
       {/* 에이전트 목록 */}
@@ -76,12 +76,12 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
           const bg = done
             ? 'rgba(34,211,160,0.07)'
             : active
-            ? 'rgba(124,106,247,0.1)'
+            ? 'rgba(255,107,53,0.09)'
             : 'rgba(255,255,255,0.02)';
           const border = done
             ? 'rgba(34,211,160,0.25)'
             : active
-            ? 'rgba(124,106,247,0.35)'
+            ? 'rgba(255,107,53,0.35)'
             : 'rgba(255,255,255,0.05)';
 
           return (
@@ -102,9 +102,9 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
                   background: done
                     ? 'rgba(34,211,160,0.18)'
                     : active
-                    ? 'rgba(124,106,247,0.2)'
+                    ? 'rgba(255,107,53,0.18)'
                     : 'rgba(255,255,255,0.04)',
-                  color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
+                  color: done ? '#22d3a0' : active ? '#FF6B35' : '#555',
                 }}
               >
                 {done ? '✓' : active ? <SpinIcon /> : <span style={{ fontSize: '1.1rem' }}>{a.icon}</span>}
@@ -130,7 +130,7 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
                 </div>
                 <div
                   className="text-[0.78rem]"
-                  style={{ color: done ? '#22d3a0' : active ? '#a09eb8' : '#444' }}
+                  style={{ color: done ? '#22d3a0' : active ? '#a09080' : '#444' }}
                 >
                   {a.desc}
                 </div>
@@ -139,7 +139,7 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
               {/* 상태 */}
               <div
                 className="text-[0.78rem] font-semibold flex-shrink-0"
-                style={{ color: done ? '#22d3a0' : active ? '#a78bfa' : '#333' }}
+                style={{ color: done ? '#22d3a0' : active ? '#FF6B35' : '#333' }}
               >
                 {done ? '완료 ✓' : active ? '진행 중' : '대기'}
               </div>
@@ -148,7 +148,7 @@ export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }
         })}
       </div>
 
-      <div className="mt-6 text-center text-[#3a3a50] text-[0.77rem]">
+      <div className="mt-6 text-center text-[0.77rem]" style={{ color: '#3a2e22' }}>
         본 견적은 AI 자동 분석 결과이며, 최종 견적은 현장 확인 후 확정됩니다.
       </div>
     </div>
