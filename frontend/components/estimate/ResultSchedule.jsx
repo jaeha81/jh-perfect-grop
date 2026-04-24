@@ -3,7 +3,7 @@ import { formatDays, formatDate } from '@/lib/estimate-formatters';
 
 const RISK_STYLES = {
   normal:   { bg: 'rgba(34,211,160,0.1)',  border: 'rgba(34,211,160,0.3)',  color: '#22d3a0', icon: '✓' },
-  moderate: { bg: 'rgba(124,106,247,0.1)', border: 'rgba(124,106,247,0.3)', color: '#a78bfa', icon: '◎' },
+  moderate: { bg: 'rgba(255,107,53,0.1)',  border: 'rgba(255,107,53,0.3)',  color: '#FF8C5A', icon: '◎' },
   tight:    { bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.3)',  color: '#fbbf24', icon: '⚠' },
   critical: { bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)',   color: '#f87171', icon: '🚨' },
   unknown:  { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', color: '#8b8a9e', icon: 'i' },
@@ -14,11 +14,11 @@ export default function ResultSchedule({ schedule }) {
   const risk = RISK_STYLES[schedule.risk.level] || RISK_STYLES.unknown;
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         예상 공사 일정
       </div>
-      <div className="text-[#6b6a80] text-[0.82rem] mb-5">
+      <div className="text-[#6b5f50] text-[0.82rem] mb-5">
         공사 범위 기반 권장 기간입니다. 희망 일정과의 적정성을 함께 진단합니다.
       </div>
 
@@ -63,14 +63,14 @@ function MetricBox({ label, value, highlight }) {
     <div
       className="rounded-lg p-3"
       style={{
-        background: highlight ? 'rgba(124,106,247,0.08)' : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${highlight ? 'rgba(124,106,247,0.3)' : 'rgba(255,255,255,0.06)'}`,
+        background: highlight ? 'rgba(255,107,53,0.08)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${highlight ? 'rgba(255,107,53,0.28)' : 'rgba(255,255,255,0.06)'}`,
       }}
     >
-      <div className="text-[#6b6a80] text-[0.7rem] uppercase tracking-wider">{label}</div>
+      <div className="text-[#6b5f50] text-[0.7rem] uppercase tracking-wider">{label}</div>
       <div
         className="text-[0.92rem] font-bold mt-1"
-        style={{ color: highlight ? '#a78bfa' : '#e8e6f0' }}
+        style={{ color: highlight ? '#FF8C5A' : '#e8e6f0' }}
       >
         {value}
       </div>
@@ -85,7 +85,7 @@ function Chip({ label, value }) {
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <span className="text-[#555]">{label}:</span>
-      <span className="text-[#c4c2d8]">{value}</span>
+      <span className="text-[#c8b8a8]">{value}</span>
     </span>
   );
 }

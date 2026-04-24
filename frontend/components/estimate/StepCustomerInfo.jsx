@@ -68,8 +68,8 @@ export default function StepCustomerInfo({ state, dispatch, onNext }) {
         className="rounded-xl p-4 mt-2"
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
       >
-        <div className="text-[0.75rem] text-[#7a7898] leading-relaxed mb-3">
-          <span className="text-[#a09eb8] font-semibold">개인정보 수집·이용 안내</span>
+        <div className="text-[0.75rem] text-[#6b5f50] leading-relaxed mb-3">
+          <span className="text-[#a09080] font-semibold">개인정보 수집·이용 안내</span>
           <br />
           · 수집 항목: 고객명, 연락처, 이메일, 현장 주소
           <br />
@@ -84,9 +84,9 @@ export default function StepCustomerInfo({ state, dispatch, onNext }) {
             type="checkbox"
             checked={privacyConsent}
             onChange={(e) => setPrivacyConsent(e.target.checked)}
-            className="w-4 h-4 rounded accent-[#7c6fcd] cursor-pointer"
+            className="w-4 h-4 rounded cursor-pointer"
           />
-          <span className="text-[0.82rem] text-[#c8c6d8]">
+          <span className="text-[0.82rem] text-[#c8b8a8]">
             위 개인정보 수집·이용에 동의합니다. <span className="text-[#f87171]">*</span>
           </span>
         </label>

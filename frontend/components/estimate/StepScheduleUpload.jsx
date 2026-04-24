@@ -13,9 +13,9 @@ const UPLOAD_ZONES = [
     accept: 'image/jpeg,image/png,image/webp',
     hint: 'JPG/PNG/WEBP · 최대 10MB · 최대 4장',
     placeholder: '현장 상태, 기존 인테리어 사진',
-    border: 'rgba(124,106,247,0.35)',
-    bg: 'rgba(124,106,247,0.04)',
-    badge: { bg: 'rgba(124,106,247,0.15)', color: '#a78bfa' },
+    border: 'rgba(255,107,53,0.35)',
+    bg: 'rgba(255,107,53,0.04)',
+    badge: { bg: 'rgba(255,107,53,0.15)', color: '#FF8C5A' },
     maxCount: 4,
   },
   {
@@ -218,7 +218,7 @@ function UploadZone({ zone, files, dispatch, inputRef }) {
                 className="flex items-center justify-between px-3 py-2 rounded-lg text-[0.8rem]"
                 style={{ background: 'rgba(34,211,160,0.05)', border: '1px solid rgba(34,211,160,0.12)' }}
               >
-                <span className="text-[#c4c2d8] truncate">
+                <span className="text-[#c8b8a8] truncate">
                   {f.type === 'application/pdf' ? '📄' : '🖼'} {f.name}
                 </span>
                 <button
@@ -238,7 +238,7 @@ function UploadZone({ zone, files, dispatch, inputRef }) {
                 ) : (
                   <div
                     className="w-full h-full flex flex-col items-center justify-center gap-1 p-1"
-                    style={{ background: 'rgba(124,106,247,0.08)', border: '1px solid rgba(124,106,247,0.15)' }}
+                    style={{ background: 'rgba(255,107,53,0.06)', border: '1px solid rgba(255,107,53,0.18)' }}
                   >
                     <span className="text-lg">🖼</span>
                     <span className="text-[0.6rem] text-center leading-tight text-[#888] truncate w-full px-1" title={f.name}>
@@ -345,7 +345,7 @@ export default function StepScheduleUpload({ state, dispatch, onSubmit, submitti
 
       <div
         className="rounded-lg px-4 py-3 mt-1 text-[0.82rem] leading-[1.6]"
-        style={{ background: 'rgba(124,106,247,0.06)', border: '1px solid rgba(124,106,247,0.18)', color: '#a09eb8' }}
+        style={{ background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.16)', color: '#a09080' }}
       >
         📎 사진·도면 이미지(JPG/PNG)·스케치를 함께 올리면 AI가 공간을 더 정밀하게 분석합니다. PDF는 파일명만 기록되며 AI 이미지 분석에는 도면 JPG/PNG를 권장합니다.
       </div>

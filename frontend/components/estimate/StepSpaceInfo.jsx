@@ -40,12 +40,18 @@ export default function StepSpaceInfo({ state, dispatch, onNext }) {
                 }}
                 className="px-3 py-3 rounded-xl text-left transition-colors duration-150"
                 style={{
-                  background: active ? 'rgba(124,106,247,0.15)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${active ? 'rgba(124,106,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? 'rgba(255,107,53,0.14)' : 'rgba(255,255,255,0.025)',
+                  border: `1px solid ${active ? 'rgba(255,107,53,0.46)' : 'rgba(255,255,255,0.07)'}`,
+                  transition: 'all 0.18s ease',
+                  transform: active ? 'translateY(-1px)' : 'none',
+                  boxShadow: active ? '0 4px 14px rgba(255,107,53,0.18)' : 'none',
                 }}
               >
-                <div className="text-[#e8e6f0] text-[0.88rem] font-semibold">{t.label}</div>
-                <div className="text-[#6b6a80] text-[0.72rem] mt-0.5 leading-[1.4]">{t.desc}</div>
+                <div
+                  className="text-[0.88rem] font-semibold"
+                  style={{ color: active ? '#FF8C5A' : '#e8e6f0' }}
+                >{t.label}</div>
+                <div className="text-[0.72rem] mt-0.5 leading-[1.4]" style={{ color: active ? '#c8804a' : '#6b5f50' }}>{t.desc}</div>
               </button>
             );
           })}

@@ -15,7 +15,7 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
           disabled={currentStep <= 1}
           className="btn-secondary flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg"
           style={{
-            color: currentStep <= 1 ? '#2a2a38' : '#a09eb8',
+            color: currentStep <= 1 ? '#1a120a' : '#a09080',
             background: currentStep <= 1 ? 'transparent' : 'rgba(255,255,255,0.04)',
             border: `1px solid ${currentStep <= 1 ? 'transparent' : 'rgba(255,255,255,0.07)'}`,
             cursor: currentStep <= 1 ? 'not-allowed' : 'pointer',
@@ -25,7 +25,7 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
         </button>
 
         <div className="text-center">
-          <div className="text-[0.72rem] text-[#6b6a80] font-medium tracking-wide uppercase">
+          <div className="text-[0.72rem] text-[#6b5f50] font-medium tracking-wide uppercase">
             {current ? `STEP ${current.step} / ${total}` : ''}
           </div>
           {current && (
@@ -72,7 +72,7 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
                     : done
                     ? 'rgba(34,211,160,0.1)'
                     : 'transparent',
-                  color: active ? '#FF6B35' : done ? '#22d3a0' : '#3a3a50',
+                  color: active ? '#FF6B35' : done ? '#22d3a0' : '#3a2e20',
                   fontWeight: active ? 600 : 400,
                   border: active ? '1px solid rgba(255,107,53,0.28)' : '1px solid transparent',
                 }}

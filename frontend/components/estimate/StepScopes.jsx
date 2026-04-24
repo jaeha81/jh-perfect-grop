@@ -37,9 +37,9 @@ export default function StepScopes({ state, dispatch, onNext }) {
                   onClick={() => dispatch({ type: 'TOGGLE_SCOPE', scope: it.key })}
                   className="px-3 py-2 rounded-lg text-[0.83rem] text-left transition-colors duration-150"
                   style={{
-                    background: active ? 'rgba(34,211,160,0.1)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${active ? 'rgba(34,211,160,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                    color: active ? '#22d3a0' : '#c4c2d8',
+                    background: active ? 'rgba(34,211,160,0.1)' : 'rgba(255,255,255,0.025)',
+                    border: `1px solid ${active ? 'rgba(34,211,160,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                    color: active ? '#22d3a0' : '#7a6a5a',
                   }}
                 >
                   <span className="mr-2 font-bold">{active ? '✓' : '○'}</span>
@@ -60,15 +60,15 @@ export default function StepScopes({ state, dispatch, onNext }) {
       {/* 조건부 질문 */}
       {activeConditionals.length > 0 && (
         <div className="mt-6 pt-5 border-t border-white/[0.06]">
-          <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-3">
+          <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-3">
             선택 항목 기반 추가 질문
           </div>
           {activeConditionals.map((group) => (
             <div key={group.id} className="mb-5">
-              <div className="text-[#c4c2d8] text-[0.88rem] font-semibold mb-2">
+              <div className="text-[#c8b8a8] text-[0.88rem] font-semibold mb-2">
                 ↳ {group.title}
               </div>
-              <div className="space-y-3 pl-3 border-l-2 border-[rgba(124,106,247,0.25)]">
+              <div className="space-y-3 pl-3 border-l-2 border-[rgba(255,107,53,0.25)]">
                 {group.questions.map((q) => (
                   <Field key={q.key} label={q.label}>
                     {q.type === 'boolean' && (

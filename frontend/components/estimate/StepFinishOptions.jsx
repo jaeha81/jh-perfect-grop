@@ -26,12 +26,21 @@ export default function StepFinishOptions({ state, dispatch, onNext }) {
                 }
                 className="px-4 py-3 rounded-xl text-left transition-colors duration-150"
                 style={{
-                  background: active ? 'rgba(124,106,247,0.15)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${active ? 'rgba(124,106,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? 'rgba(255,107,53,0.14)' : 'rgba(255,255,255,0.025)',
+                  border: `1px solid ${active ? 'rgba(255,107,53,0.46)' : 'rgba(255,255,255,0.07)'}`,
+                  transition: 'all 0.18s ease',
+                  transform: active ? 'translateY(-1px)' : 'none',
+                  boxShadow: active ? '0 4px 14px rgba(255,107,53,0.18)' : 'none',
                 }}
               >
-                <div className="text-[#e8e6f0] text-[0.9rem] font-semibold">{g.label}</div>
-                <div className="text-[#6b6a80] text-[0.75rem] mt-0.5 leading-[1.4]">{g.desc}</div>
+                <div
+                  className="text-[0.9rem] font-semibold"
+                  style={{ color: active ? '#FF8C5A' : '#e8e6f0' }}
+                >{g.label}</div>
+                <div
+                  className="text-[0.75rem] mt-0.5 leading-[1.4]"
+                  style={{ color: active ? '#c8804a' : '#6b5f50' }}
+                >{g.desc}</div>
               </button>
             );
           })}
@@ -60,10 +69,10 @@ export default function StepFinishOptions({ state, dispatch, onNext }) {
       </Field>
 
       <div
-        className="rounded-lg px-4 py-3 text-[0.8rem] leading-[1.55] mt-2"
-        style={{ background: 'rgba(124,106,247,0.06)', border: '1px solid rgba(124,106,247,0.18)', color: '#a09eb8' }}
+        className="rounded-lg px-4 py-3 text-[0.8rem] leading-[1.6] mt-2"
+        style={{ background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.16)', color: '#a09080' }}
       >
-        별도 항목은 <span className="text-[#a78bfa] font-semibold">금액이 별도로 표기</span>되며,
+        별도 항목은 <span className="text-[#FF8C5A] font-semibold">금액이 별도로 표기</span>되며,
         실제 수량·사양에 따라 현장 확인 후 최종 금액이 확정됩니다.
       </div>
 

@@ -29,11 +29,11 @@ export default function ResultInclusions({ included = [], separate = [], exclude
   ];
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         포함 / 별도 / 제외 항목
       </div>
-      <div className="text-[#6b6a80] text-[0.82rem] mb-5">
+      <div className="text-[#6b5f50] text-[0.82rem] mb-5">
         견적 범위를 명확히 구분합니다. 별도·제외 항목은 필요 시 별도 협의됩니다.
       </div>
 

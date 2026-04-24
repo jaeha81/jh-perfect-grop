@@ -212,3 +212,40 @@ button, a, [role="button"] {
   background: rgba(255,107,53,0.28);
   color: #f0ebe6;
 }
+
+/* ─── Select 커스텀 화살표 제거 (컴포넌트에서 직접 처리) ─── */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* ─── 날짜 입력 색상 ─── */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.4) sepia(1) hue-rotate(340deg) saturate(0.7);
+  opacity: 0.6;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* ─── 숫자 입력 스피너 제거 ─── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ─── 프리미엄 카드 ─── */
+.card-premium {
+  background: linear-gradient(160deg, #1a1008 0%, #13100d 100%);
+  border: 1px solid rgba(255,107,53,0.18);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* ─── 체크박스 accent 오렌지 ─── */
+input[type="checkbox"] {
+  accent-color: #FF6B35;
+}

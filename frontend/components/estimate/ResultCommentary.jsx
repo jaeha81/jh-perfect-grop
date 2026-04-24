@@ -5,11 +5,11 @@ export default function ResultCommentary({ validatorFlags = [], expertComment, c
   const hasAdjustments = adjustments?.siteFactors?.length > 0;
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         AI 분석 의견
       </div>
-      <div className="text-[#6b6a80] text-[0.82rem] mb-5">
+      <div className="text-[#6b5f50] text-[0.82rem] mb-5">
         18년 현장 기준 VALIDATOR + 입력 기반 분석 코멘트입니다.
       </div>
 
@@ -20,10 +20,10 @@ export default function ResultCommentary({ validatorFlags = [], expertComment, c
             <div
               key={i}
               className="flex gap-2 rounded-lg px-4 py-3"
-              style={{ background: 'rgba(124,106,247,0.06)', border: '1px solid rgba(124,106,247,0.18)' }}
+              style={{ background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.16)' }}
             >
-              <span className="text-[#a78bfa] text-[0.9rem]">•</span>
-              <span className="text-[#c4c2d8] text-[0.85rem] leading-[1.6]">{c}</span>
+              <span className="text-[#FF8C5A] text-[0.9rem]">•</span>
+              <span className="text-[#c8b8a8] text-[0.85rem] leading-[1.6]">{c}</span>
             </div>
           ))}
         </div>
@@ -76,7 +76,7 @@ export default function ResultCommentary({ validatorFlags = [], expertComment, c
       {/* 현장 여건 보정 요약 */}
       {hasAdjustments && (
         <div className="mt-3">
-          <div className="text-[#6b6a80] text-[0.72rem] uppercase tracking-wider mb-2">
+          <div className="text-[#6b5f50] text-[0.72rem] uppercase tracking-wider mb-2">
             현장 여건 보정 내역
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -84,7 +84,7 @@ export default function ResultCommentary({ validatorFlags = [], expertComment, c
               <span
                 key={i}
                 className="inline-block px-2 py-0.5 rounded text-[0.75rem]"
-                style={{ background: 'rgba(124,106,247,0.08)', color: '#a78bfa', border: '1px solid rgba(124,106,247,0.2)' }}
+                style={{ background: 'rgba(255,107,53,0.06)', color: '#FF8C5A', border: '1px solid rgba(255,107,53,0.18)' }}
               >
                 {f.label} +{Math.round(f.pct * 100)}%
               </span>

@@ -49,7 +49,7 @@ export default function StepNav({
             style={{
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.09)',
-              color: '#a09eb8',
+              color: '#a09080',
               cursor: 'pointer',
               flexShrink: 0,
             }}

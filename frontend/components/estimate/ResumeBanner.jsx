@@ -11,8 +11,8 @@ export default function ResumeBanner({ draft, onResume, onDiscard }) {
     <div
       className="rounded-2xl p-5 mb-5"
       style={{
-        background: 'linear-gradient(135deg, rgba(124,106,247,0.1), rgba(34,211,160,0.06))',
-        border: '1px solid rgba(124,106,247,0.3)',
+        background: 'linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.04))',
+        border: '1px solid rgba(255,107,53,0.28)',
       }}
     >
       <div className="flex items-start gap-3">
@@ -31,7 +31,7 @@ export default function ResumeBanner({ draft, onResume, onDiscard }) {
               onClick={onResume}
               className="px-4 py-2 rounded-lg text-[0.85rem] font-semibold"
               style={{
-                background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
+                background: 'linear-gradient(135deg,#FF6B35,#CC4E1F)',
                 color: '#fff',
                 border: 'none',
                 cursor: 'pointer',

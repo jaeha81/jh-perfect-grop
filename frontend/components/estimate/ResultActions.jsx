@@ -92,11 +92,11 @@ export default function ResultActions({ enriched, onReset, customer }) {
   }
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-8">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-8">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         다음 단계
       </div>
-      <div className="text-[#6b6a80] text-[0.82rem] mb-5">
+      <div className="text-[#6b5f50] text-[0.82rem] mb-5">
         상담 연계 또는 견적 저장을 원하시면 아래 버튼을 이용해 주세요.
       </div>
 
@@ -134,7 +134,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
           style={{
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
-            color: '#a09eb8',
+            color: '#a09080',
             cursor: 'pointer',
           }}
         >
@@ -149,7 +149,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
         >
           {submitState !== 'ok' && (
             <>
-              <p className="text-[#c4c2d8] text-[0.9rem] leading-[1.65]">
+              <p className="text-[#c8b8a8] text-[0.9rem] leading-[1.65]">
                 {modal === 'visit'
                   ? '현장 방문 상담은 실측이 포함되며 평일 기준 약 40~60분 소요됩니다.'
                   : '입력하신 연락처로 영업일 기준 1일 이내 담당자가 연락드립니다.'}
@@ -157,7 +157,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
 
               <div className="mt-3 rounded-lg px-3 py-2 text-[0.8rem]"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="text-[#6b6a80]">요청번호</div>
+                <div className="text-[#6b5f50]">요청번호</div>
                 <div className="text-[#22d3a0] font-mono">{enriched?.inquiryId || '-'}</div>
               </div>
 
@@ -189,7 +189,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
                 style={{
                   background: modal === 'visit'
                     ? 'rgba(34,211,160,0.15)'
-                    : 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
+                    : 'linear-gradient(135deg,#FF6B35,#CC4E1F)',
                   color: modal === 'visit' ? '#22d3a0' : '#fff',
                   border: modal === 'visit' ? '1px solid rgba(34,211,160,0.4)' : 'none',
                   cursor: submitState === 'submitting' ? 'not-allowed' : 'pointer',
@@ -204,7 +204,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
                 type="button"
                 onClick={closeModal}
                 className="w-full mt-2 py-2 rounded-lg text-[0.82rem]"
-                style={{ background: 'transparent', color: '#6b6a80', border: 'none', cursor: 'pointer' }}
+                style={{ background: 'transparent', color: '#6b5f50', border: 'none', cursor: 'pointer' }}
               >
                 취소
               </button>
@@ -225,19 +225,19 @@ export default function ResultActions({ enriched, onReset, customer }) {
               </div>
               <div className="mt-3 space-y-1 text-[0.8rem]">
                 <div className="flex justify-between">
-                  <span className="text-[#6b6a80]">요청번호</span>
+                  <span className="text-[#6b5f50]">요청번호</span>
                   <span className="text-[#22d3a0] font-mono">{submitResult.inquiry_id}</span>
                 </div>
                 {submitResult.received_at && (
                   <div className="flex justify-between">
-                    <span className="text-[#6b6a80]">접수 시각</span>
-                    <span className="text-[#c4c2d8]">{submitResult.received_at}</span>
+                    <span className="text-[#6b5f50]">접수 시각</span>
+                    <span className="text-[#c8b8a8]">{submitResult.received_at}</span>
                   </div>
                 )}
                 {customerPhone && (
                   <div className="flex justify-between">
-                    <span className="text-[#6b6a80]">연락 예정</span>
-                    <span className="text-[#c4c2d8]">{customerPhone}</span>
+                    <span className="text-[#6b5f50]">연락 예정</span>
+                    <span className="text-[#c8b8a8]">{customerPhone}</span>
                   </div>
                 )}
               </div>
@@ -246,7 +246,7 @@ export default function ResultActions({ enriched, onReset, customer }) {
                 onClick={closeModal}
                 className="w-full mt-4 py-2.5 rounded-lg font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
+                  background: 'linear-gradient(135deg,#FF6B35,#CC4E1F)',
                   color: '#fff',
                   border: 'none',
                   cursor: 'pointer',
@@ -270,9 +270,9 @@ function ActionButton({ label, desc, primary, onClick, disabled }) {
       disabled={disabled}
       className="text-left px-4 py-3 rounded-xl transition-opacity duration-150"
       style={{
-        background: primary ? 'linear-gradient(135deg,#7c6af7,#5b4fd4)' : 'rgba(255,255,255,0.03)',
+        background: primary ? 'linear-gradient(135deg,#FF6B35,#CC4E1F)' : 'rgba(255,255,255,0.03)',
         border: primary ? 'none' : '1px solid rgba(255,255,255,0.07)',
-        color: primary ? '#fff' : '#c4c2d8',
+        color: primary ? '#fff' : '#c8b8a8',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
       }}
@@ -280,7 +280,7 @@ function ActionButton({ label, desc, primary, onClick, disabled }) {
       <div className="font-bold text-[0.9rem]">{label}</div>
       <div
         className="text-[0.75rem] mt-0.5 leading-[1.5]"
-        style={{ color: primary ? 'rgba(255,255,255,0.8)' : '#6b6a80' }}
+        style={{ color: primary ? 'rgba(255,255,255,0.8)' : '#6b5f50' }}
       >
         {desc}
       </div>
@@ -297,7 +297,7 @@ function SimpleModal({ title, children, onClose }) {
     >
       <div
         className="w-full max-w-[420px] rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
-        style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.1)' }}
+        style={{ background: '#13100d', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-[#e8e6f0] text-[1rem] font-bold mb-3">{title}</div>

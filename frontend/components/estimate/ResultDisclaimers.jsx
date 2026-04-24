@@ -13,7 +13,7 @@ export default function ResultDisclaimers() {
       className="rounded-2xl p-6 sm:p-8 mb-5"
       style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}
     >
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-3">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-3">
         유의사항
       </div>
       <ul className="space-y-2">

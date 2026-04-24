@@ -20,11 +20,11 @@ export default function ResultDetailEstimate({ breakdown, workItems }) {
   const entries = Object.entries(breakdown || {}).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         공종별 세부견적서
       </div>
-      <div className="text-[#6b6a80] text-[0.82rem] mb-5">
+      <div className="text-[#6b5f50] text-[0.82rem] mb-5">
         표준형 기준 공종별 금액 배분입니다. 실제 수량·단가는 실측 후 조정됩니다.
       </div>
 
@@ -41,7 +41,7 @@ export default function ResultDetailEstimate({ breakdown, workItems }) {
           <div key={k} className="mb-3">
             <div className="flex justify-between items-center mb-1">
               <div>
-                <span className="text-[#c4c2d8] text-[0.9rem] font-medium">{k}</span>
+                <span className="text-[#c8b8a8] text-[0.9rem] font-medium">{k}</span>
                 {hint && <span className="text-[#555] text-[0.75rem] ml-2">— {hint}</span>}
               </div>
               <span className="text-[#e8e6f0] text-[0.88rem] font-semibold whitespace-nowrap">
@@ -51,7 +51,7 @@ export default function ResultDetailEstimate({ breakdown, workItems }) {
             <div className="h-[6px] bg-white/[0.06] rounded overflow-hidden">
               <div
                 className="h-full rounded transition-all duration-500"
-                style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c6af7,#22d3a0)' }}
+                style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF6B35,#22d3a0)' }}
               />
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function ResultDetailEstimate({ breakdown, workItems }) {
 
       {workItems && workItems.length > 0 && (
         <details className="mt-4">
-          <summary className="text-[#a78bfa] text-[0.82rem] cursor-pointer">
+          <summary className="text-[#FF8C5A] text-[0.82rem] cursor-pointer">
             세부 항목 {workItems.length}건 보기
           </summary>
           <div className="mt-2 space-y-1 max-h-[300px] overflow-y-auto">
@@ -77,7 +77,7 @@ export default function ResultDetailEstimate({ breakdown, workItems }) {
                 className="flex justify-between text-[0.78rem] px-3 py-1.5 rounded"
                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
               >
-                <span className="text-[#c4c2d8] truncate">
+                <span className="text-[#c8b8a8] truncate">
                   {it.category ? `[${it.category}] ` : ''}{it.subcategory || it.name || '-'}
                 </span>
                 <span className="text-[#8b8a9e] whitespace-nowrap ml-2">

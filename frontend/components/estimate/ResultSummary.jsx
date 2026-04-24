@@ -7,24 +7,24 @@ export default function ResultSummary({ form, enriched }) {
   const priorityFocus = form.finish.priorityFocus?.join(' · ') || '미입력';
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
       {/* AI 생성물 표시 — AI 기본법 제34조 / 대회 기준 "AI GENERATED" */}
       <div
         className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg"
-        style={{ background: 'rgba(124,111,205,0.12)', border: '1px solid rgba(124,111,205,0.25)' }}
+        style={{ background: 'rgba(255,107,53,0.12)', border: '1px solid rgba(255,107,53,0.28)' }}
       >
         <span className="text-base" aria-hidden="true">🤖</span>
-        <span className="text-[0.75rem] font-semibold tracking-wide" style={{ color: '#a090e8' }}>
+        <span className="text-[0.75rem] font-semibold tracking-wide" style={{ color: '#FF8C5A' }}>
           AI 자동 생성 견적 (AI GENERATED)
         </span>
-        <span className="text-[0.72rem] text-[#6b6a80] ml-1">
+        <span className="text-[0.72rem] text-[#6b5f50] ml-1">
           · 5 에이전트 파이프라인 · Claude Sonnet 4.6
         </span>
       </div>
 
       <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
         <div>
-          <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase">
+          <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase">
             견적 요청 요약
           </div>
           <div className="text-[#6b6a80] text-[0.78rem] mt-1">#{form.inquiryId}</div>

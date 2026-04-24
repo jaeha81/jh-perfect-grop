@@ -5,8 +5,8 @@ export default function ResultComparisonCards({ tiers }) {
   const order = ['budget', 'standard', 'premium'];
 
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
+    <div className="bg-[#13100d] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
+      <div className="text-[#a09080] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-1">
         비교 견적 — 저가 / 표준 / 고급
       </div>
       <div className="text-[#6b6a80] text-[0.82rem] mb-5">
@@ -23,9 +23,9 @@ export default function ResultComparisonCards({ tiers }) {
               key={k}
               className="rounded-xl p-5 flex flex-col"
               style={{
-                background: rec ? 'rgba(124,106,247,0.12)' : 'rgba(255,255,255,0.03)',
-                border: `1.5px solid ${rec ? 'rgba(124,106,247,0.5)' : 'rgba(255,255,255,0.07)'}`,
-                boxShadow: rec ? '0 4px 20px rgba(124,106,247,0.15)' : 'none',
+                background: rec ? 'rgba(255,107,53,0.12)' : 'rgba(255,255,255,0.025)',
+                border: `1.5px solid ${rec ? 'rgba(255,107,53,0.46)' : 'rgba(255,255,255,0.07)'}`,
+                boxShadow: rec ? '0 4px 20px rgba(255,107,53,0.15)' : 'none',
               }}
             >
               <div className="flex items-center justify-between mb-2">
@@ -35,9 +35,9 @@ export default function ResultComparisonCards({ tiers }) {
                     background: k === 'premium'
                       ? 'rgba(251,191,36,0.15)'
                       : k === 'standard'
-                      ? 'rgba(124,106,247,0.2)'
+                      ? 'rgba(255,107,53,0.15)'
                       : 'rgba(255,255,255,0.06)',
-                    color: k === 'premium' ? '#fbbf24' : k === 'standard' ? '#a78bfa' : '#8b8a9e',
+                    color: k === 'premium' ? '#fbbf24' : k === 'standard' ? '#FF8C5A' : '#7a6a5a',
                   }}
                 >
                   {t.label}
@@ -45,7 +45,7 @@ export default function ResultComparisonCards({ tiers }) {
                 {rec && (
                   <span
                     className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: '#7c6af7', color: '#fff' }}
+                    style={{ background: '#FF6B35', color: '#fff' }}
                   >
                     ✨ 추천
                   </span>
