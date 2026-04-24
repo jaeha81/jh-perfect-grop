@@ -4,6 +4,30 @@
 
 ---
 
+## [2026-04-24] 다중 첨부파일 지원 (Wave A~D) 구현 완료
+
+- **범위**: SCANNER 다중 이미지 + 3존 업로드 UI + 오른쪽 미리보기 패널
+- **커밋**: `82703b7`
+- **신규/변경 파일**:
+  - `frontend/lib/estimate-state.js` — `sketches: []` 추가, 리듀서 확장
+  - `frontend/lib/estimate-validators.js` — PDF/스케치 파일 검증 추가
+  - `frontend/components/estimate/StepScheduleUpload.jsx` — 3존 + 미리보기 패널 + `maxCount` 제한
+  - `frontend/app/page.js` — `image_base64` 레거시 필드 제거, 3배열 전송으로 전환
+  - `backend/agents/scanner.py` — `run_scanner_multi()` 추가, 역할별 레이블 이미지 블록
+  - `backend/main.py` — `EstimateRequest`에 `images_base64/drawings_base64/sketches_base64` 추가
+- **코드리뷰 수정사항 (Critical 3 + Warning 3)**:
+  1. ✅ PDF UI 오해 해소 — 힌트 텍스트·푸터 문구 수정
+  2. ✅ 프론트엔드 파일 수 제한 — `maxCount` 강제 적용
+  3. ✅ 중복 이미지 전송 제거 — `image_base64` 레거시 필드 제거
+  4. ✅ 예외 로깅 추가 — `logger.warning(..., exc_info=True)`
+  5. ✅ 썸네일 null 안전 렌더링 — f.preview null guard 추가
+- **미구현 (미래 확장)**:
+  - PDF 서버사이드 이미지 변환 (`pdf2image`) — AI 분석에 도면 JPG/PNG 권장 문구로 대체
+  - `ADMIN_TOKEN` 미설정 시 403 처리 — 별도 태스크로 분리
+- **상태**: ✅ 완료 — master 브랜치 배포됨
+
+---
+
 ## [2026-04-15] recalculate 엔드포인트 PDF 미생성
 
 - **문제**: `POST /api/estimate/recalculate` 응답에 `pdf_base64` 없음, `excel_base64`만 생성됨

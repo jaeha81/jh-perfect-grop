@@ -18,6 +18,7 @@
 | [cross-project-analysis.md](cross-project-analysis.md) | 견적시스템 교차 분석 + 보완 계획 | ✅ 2026-04-12 |
 | [future-upgrades.md](future-upgrades.md) | 대회 이후 업그레이드 로드맵 | ✅ 2026-04-12 |
 | [deployment.md](deployment.md) | Vercel+Railway 배포 구조 + 체크리스트 | ✅ 2026-04-14 |
+| [known-issues.md](known-issues.md) | 버그 이력 + 구현 완료 사항 | ✅ 2026-04-24 |
 
 ## 조회 가이드
 

@@ -1,3 +1,134 @@
+# Plan: 다중 첨부파일 지원 + 오른쪽 미리보기 패널
+
+> 작성일: 2026-04-24  
+> 상태: ✅ 구현 완료 (커밋 82703b7)
+
+---
+
+## 목표
+
+현재 사진 1장만 SCANNER에 전달되는 구조를 개선하여,  
+현장사진·PDF도면·스케치 등 다양한 첨부파일을 AI가 인지하고  
+Step 6 우측 패널에 실시간 미리보기를 제공한다.
+
+---
+
+## 현황 분석
+
+| 항목 | 현재 |
+|------|------|
+| `uploads.photos[]` | 저장은 되지만 첫 장만 backend 전송 |
+| `uploads.drawings[]` | 저장은 되지만 **backend에 전혀 안 감** |
+| `sketches` 카테고리 | 없음 |
+| SCANNER 입력 | `image_base64: Optional[str]` — 단일 이미지 |
+| 레이아웃 | 단일 컬럼, 오른쪽 패널 없음 |
+
+---
+
+## 변경 범위 (중간 규모)
+
+### Wave A — State & Validation
+
+**`frontend/lib/estimate-state.js`**
+- `uploads` 구조에 `sketches: []` 추가
+- `ADD_UPLOAD` / `REMOVE_UPLOAD` reducer: `kind = 'photos' | 'drawings' | 'sketches'`
+
+**`frontend/lib/estimate-validators.js`**
+- PDF 허용: `application/pdf`, 최대 20MB
+- 스케치 허용: `image/*`, 최대 10MB
+
+---
+
+### Wave B — 업로드 UI (StepScheduleUpload.jsx)
+
+기존 사진+도면 2존 → **3존으로 분리**:
+
+| 존 | 허용 형식 | 아이콘 | 힌트 |
+|----|---------|--------|------|
+| 현장사진 | JPG/PNG/WEBP | 📷 | 현재 상태 파악에 활용 |
+| 도면/PDF | PDF/JPG/PNG | 📐 | 평면도·배치도·설계도 |
+| 스케치 | JPG/PNG | ✏️ | 손그림·메모·레이아웃 |
+
+각 존: 드래그앤드롭 + 클릭 업로드 + 다중 파일 지원
+
+---
+
+### Wave C — 오른쪽 미리보기 패널
+
+**Step 6 레이아웃**: 좌우 분할 (`lg:grid-cols-[1fr_300px]`)
+
+```
+┌─────────────────────────┬──────────────────┐
+│  업로드 폼 (좌)          │  미리보기 (우)    │
+│  - 일정 입력             │  📷 현장사진 (3)  │
+│  - 현장사진 업로드존      │  [썸네일 그리드]  │
+│  - 도면 업로드존          │  📐 도면 (1)     │
+│  - 스케치 업로드존        │  [PDF 아이콘]    │
+│                          │  ✏️ 스케치 (2)   │
+│                          │  [썸네일 그리드]  │
+│                          │                  │
+│                          │  총 6개 파일     │
+│                          │  AI 분석 예정    │
+└─────────────────────────┴──────────────────┘
+```
+
+**미리보기 패널 스펙:**
+- sticky top (폼 스크롤 중에도 고정)
+- 이미지: 썸네일 (80×80, object-cover)
+- PDF: 📄 아이콘 + 파일명
+- 각 파일: 타입 배지 + 제거(✕) 버튼
+- 모바일: 패널 숨김 (업로드존 하단 작은 썸네일로 대체)
+
+---
+
+### Wave D — Backend 다중 이미지 지원
+
+**`backend/main.py` — EstimateRequest 모델**
+```python
+image_base64: Optional[str] = None       # 기존 (하위호환)
+images_base64: List[str] = []            # 현장사진 (여러 장)
+drawings_base64: List[str] = []          # 도면 이미지
+sketches_base64: List[str] = []          # 스케치
+```
+
+**`backend/agents/scanner.py` — 다중 이미지 처리**
+- Claude Vision content 블록에 이미지 순서대로 추가
+- 시스템 프롬프트에 이미지 역할 레이블 주입:
+  - "이미지 1-N: 현장사진입니다"
+  - "이미지 N+1: 도면(평면도)입니다"
+  - "이미지 M+1: 손그림 스케치입니다"
+- 최대 전송: 현장사진 4장 + 도면 2장 + 스케치 2장 = **8장 상한**
+
+**`frontend/app/page.js` — 전송 매핑**
+- 기존 첫 장만 전송 → 전체 배열 전송으로 변경
+- PDF 파일은 클라이언트 변환 불가 → 파일명을 description 텍스트에 포함
+
+---
+
+## 파일 변경 목록
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `frontend/lib/estimate-state.js` | `sketches: []` 추가, reducer 업데이트 |
+| `frontend/lib/estimate-validators.js` | PDF/스케치 허용 규칙 추가 |
+| `frontend/components/estimate/StepScheduleUpload.jsx` | 3존 + 우측 미리보기 패널 |
+| `frontend/app/page.js` | 다중 파일 전송 매핑 변경 |
+| `backend/main.py` | EstimateRequest 모델 확장, scanner 호출 변경 |
+| `backend/agents/scanner.py` | 다중 이미지 + 레이블 프롬프트 |
+
+---
+
+## 미구현 범위 (이번 플랜 제외)
+
+- PDF → 이미지 서버사이드 변환 (pdf2image) — 별도 플랜
+- 동영상 / 음성 입력
+
+---
+
+## ⚠️ 이전 Plan v2 내용은 하단에 보존됨
+
+---
+
 # Plan v2: JH EstimateAI — 실무형 견적 시스템 고도화
 
 > 최종 업데이트: 2026-04-23 (대회 마감 D-1)
