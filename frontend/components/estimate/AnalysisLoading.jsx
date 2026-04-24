@@ -1,73 +1,154 @@
 'use client';
 
 const AGENTS = [
-  { name: 'SCANNER',   desc: '공간 분석' },
-  { name: 'ESTIMATOR', desc: '수량 산출' },
-  { name: 'PRICER',    desc: '단가 적용' },
-  { name: 'VALIDATOR', desc: '현장 검증' },
-  { name: 'REPORTER',  desc: '리포트 생성' },
+  { name: 'SCANNER',   desc: '공간 분석', icon: '🔍' },
+  { name: 'ESTIMATOR', desc: '수량 산출', icon: '📐' },
+  { name: 'PRICER',    desc: '단가 적용', icon: '💰' },
+  { name: 'VALIDATOR', desc: '현장 검증', icon: '✅' },
+  { name: 'REPORTER',  desc: '리포트 생성', icon: '📄' },
 ];
 
-export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }) {
+function SpinIcon() {
   return (
-    <div className="bg-[#13131a] border border-white/[0.07] rounded-2xl p-6 sm:p-8 mb-5">
-      <div className="text-center mb-6">
-        <div className="text-[#a09eb8] text-[0.78rem] font-semibold tracking-[0.08em] uppercase mb-2">
+    <svg
+      width="18" height="18" viewBox="0 0 18 18" fill="none"
+      style={{ animation: 'spin 0.8s linear infinite' }}
+    >
+      <circle cx="9" cy="9" r="7" stroke="rgba(167,139,250,0.3)" strokeWidth="2" />
+      <path d="M9 2a7 7 0 0 1 7 7" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export default function AnalysisLoading({ activeStep, doneSteps, parallelSteps }) {
+  const donePct = Math.round((doneSteps.length / AGENTS.length) * 100);
+
+  return (
+    <div
+      className="animate-fade-in rounded-3xl p-6 sm:p-10 mb-5"
+      style={{
+        background: 'linear-gradient(160deg,#16162a 0%,#13131a 100%)',
+        border: '1px solid rgba(124,106,247,0.18)',
+        boxShadow: '0 4px 60px rgba(124,106,247,0.1)',
+      }}
+    >
+      {/* 헤더 */}
+      <div className="text-center mb-8">
+        <div
+          className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+          style={{
+            background: 'rgba(124,106,247,0.1)',
+            border: '1px solid rgba(124,106,247,0.25)',
+          }}
+        >
+          <span style={{ fontSize: '2rem' }}>🤖</span>
+        </div>
+        <div className="text-[#a09eb8] text-[0.75rem] font-semibold tracking-[0.1em] uppercase mb-2">
           에이전트 분석 중
         </div>
-        <div className="text-[#c4c2d8] text-[0.95rem]">
-          5개 에이전트가 입력 정보를 분석 중입니다. 잠시만 기다려 주세요.
+        <div className="text-[#e8e6f0] text-[1.05rem] font-semibold">
+          5개 에이전트가 입력 정보를 분석하고 있습니다
         </div>
+        <div className="text-[#6b6a80] text-[0.86rem] mt-1">
+          잠시만 기다려 주세요…
+        </div>
+
+        {/* 미니 진행바 */}
+        <div
+          className="h-[4px] rounded-full overflow-hidden mt-5 max-w-[240px] mx-auto"
+          style={{ background: 'rgba(255,255,255,0.05)' }}
+        >
+          <div
+            className="h-full rounded-full progress-bar-fill transition-all duration-700"
+            style={{ width: `${donePct}%` }}
+          />
+        </div>
+        <div className="text-[#555] text-[0.72rem] mt-1.5">{donePct}% 완료</div>
       </div>
 
-      <div className="space-y-2">
+      {/* 에이전트 목록 */}
+      <div className="space-y-2.5">
         {AGENTS.map((a, i) => {
           const done = doneSteps.includes(i);
           const active = activeStep === i;
           const parallel = parallelSteps.includes(i);
 
-          const bg = done ? 'rgba(34,211,160,0.08)' : active ? 'rgba(124,106,247,0.1)' : 'rgba(255,255,255,0.02)';
-          const border = done ? 'rgba(34,211,160,0.3)' : active ? 'rgba(124,106,247,0.4)' : 'rgba(255,255,255,0.06)';
-          const label = done ? '완료' : active ? '진행 중' : '대기';
+          const bg = done
+            ? 'rgba(34,211,160,0.07)'
+            : active
+            ? 'rgba(124,106,247,0.1)'
+            : 'rgba(255,255,255,0.02)';
+          const border = done
+            ? 'rgba(34,211,160,0.25)'
+            : active
+            ? 'rgba(124,106,247,0.35)'
+            : 'rgba(255,255,255,0.05)';
 
           return (
             <div
               key={a.name}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-300"
-              style={{ background: bg, border: `1px solid ${border}` }}
+              className="flex items-center gap-4 px-5 py-3.5 rounded-2xl"
+              style={{
+                background: bg,
+                border: `1px solid ${border}`,
+                transition: 'all 0.4s ease',
+                transform: active ? 'translateX(3px)' : 'none',
+              }}
             >
+              {/* 아이콘 */}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[0.85rem] font-bold"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-[0.9rem] font-bold flex-shrink-0"
                 style={{
-                  background: done ? 'rgba(34,211,160,0.2)' : active ? 'rgba(124,106,247,0.25)' : 'rgba(255,255,255,0.05)',
+                  background: done
+                    ? 'rgba(34,211,160,0.18)'
+                    : active
+                    ? 'rgba(124,106,247,0.2)'
+                    : 'rgba(255,255,255,0.04)',
                   color: done ? '#22d3a0' : active ? '#a78bfa' : '#555',
                 }}
               >
-                {done ? '✓' : active ? '⟳' : i + 1}
+                {done ? '✓' : active ? <SpinIcon /> : <span style={{ fontSize: '1.1rem' }}>{a.icon}</span>}
               </div>
-              <div className="flex-1">
+
+              {/* 텍스트 */}
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#e8e6f0] font-semibold text-[0.9rem]">{a.name}</span>
+                  <span
+                    className="font-semibold text-[0.9rem]"
+                    style={{ color: done ? '#22d3a0' : active ? '#e8e6f0' : '#555' }}
+                  >
+                    {a.name}
+                  </span>
                   {parallel && (
                     <span
-                      className="text-[0.65rem] font-bold px-2 py-0.5 rounded"
-                      style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}
+                      className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24' }}
                     >
                       병렬
                     </span>
                   )}
                 </div>
-                <div className="text-[#6b6a80] text-[0.78rem]">{a.desc}</div>
+                <div
+                  className="text-[0.78rem]"
+                  style={{ color: done ? '#22d3a0' : active ? '#a09eb8' : '#444' }}
+                >
+                  {a.desc}
+                </div>
               </div>
-              <div className="text-[0.78rem]" style={{ color: done ? '#22d3a0' : active ? '#a78bfa' : '#555' }}>
-                {label}
+
+              {/* 상태 */}
+              <div
+                className="text-[0.78rem] font-semibold flex-shrink-0"
+                style={{ color: done ? '#22d3a0' : active ? '#a78bfa' : '#333' }}
+              >
+                {done ? '완료 ✓' : active ? '진행 중' : '대기'}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-5 text-center text-[#555] text-[0.78rem]">
+      <div className="mt-6 text-center text-[#3a3a50] text-[0.77rem]">
         본 견적은 AI 자동 분석 결과이며, 최종 견적은 현장 확인 후 확정됩니다.
       </div>
     </div>
