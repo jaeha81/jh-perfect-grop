@@ -21,28 +21,37 @@ export default function StepNav({
   }
 
   return (
-    <div className="mt-6">
+    <div className="mt-8">
       {showErrors && errorMessages.length > 0 && (
         <div
-          className="rounded-lg px-4 py-3 mb-3 text-[0.83rem] leading-[1.55]"
-          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }}
+          className="animate-scale-in rounded-xl px-5 py-4 mb-4 text-[0.84rem] leading-[1.6]"
+          style={{
+            background: 'rgba(239,68,68,0.07)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            color: '#f87171',
+          }}
         >
           {errorMessages.map((m, i) => (
-            <div key={i}>• {m}</div>
+            <div key={i} className="flex items-start gap-2">
+              <span style={{ color: '#f87171', flexShrink: 0 }}>•</span>
+              <span>{m}</span>
+            </div>
           ))}
         </div>
       )}
-      <div className="flex gap-2">
+
+      <div className="flex gap-3">
         {showPrev && (
           <button
             type="button"
             onClick={onPrev}
-            className="px-5 py-3 rounded-xl text-[0.92rem] font-semibold"
+            className="btn-secondary px-6 py-3.5 rounded-xl text-[0.92rem] font-semibold"
             style={{
               background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.09)',
               color: '#a09eb8',
               cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
             이전
@@ -51,12 +60,15 @@ export default function StepNav({
         <button
           type="button"
           onClick={handleNext}
-          className="flex-1 py-3 rounded-xl text-white text-[1rem] font-bold transition-opacity duration-150"
+          className="btn-primary flex-1 py-3.5 rounded-xl text-white text-[1rem] font-bold"
           style={{
-            background: 'linear-gradient(135deg,#7c6af7,#5b4fd4)',
-            opacity: canNext ? 1 : 0.6,
-            cursor: canNext ? 'pointer' : 'pointer',
+            background: canNext
+              ? 'linear-gradient(135deg,#7c6af7,#5b4fd4)'
+              : 'linear-gradient(135deg,#3d3560,#2e2850)',
+            opacity: canNext ? 1 : 0.55,
+            cursor: 'pointer',
             border: 'none',
+            boxShadow: canNext ? '0 6px 24px rgba(124,106,247,0.35)' : 'none',
           }}
         >
           {nextLabel} →

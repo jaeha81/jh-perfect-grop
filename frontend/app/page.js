@@ -223,8 +223,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-3 sm:px-6 py-6 sm:py-8 bg-[#0a0a0f]">
-      <div className="w-full max-w-[760px] mx-auto" ref={scrollAnchor}>
+    <div className="min-h-screen flex flex-col items-center px-3 sm:px-6 py-8 sm:py-12" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,106,247,0.08) 0%, transparent 60%), #0a0a0f' }}>
+      <div className="w-full max-w-[760px] mx-auto step-enter" ref={scrollAnchor}>
         {state.step >= STEPS.CUSTOMER && state.step <= STEPS.SCHEDULE && (
           <StepHeader
             currentStep={state.step}
@@ -319,7 +319,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="text-center text-[#444] text-[0.72rem] mt-8 mb-4">
+        <div className="text-center text-[#333] text-[0.72rem] mt-10 mb-4 tracking-wide">
           JH EstimateAI · 2026 전국민 AI 챔피언 대회 출품작 · 18년 현장 경험 기반
         </div>
       </div>

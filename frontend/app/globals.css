@@ -3,9 +3,153 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0f0f13;
+  --bg: #0a0a0f;
   --accent: #7c6af7;
+  --accent2: #22d3a0;
+  --card: #13131a;
+  --border: rgba(255,255,255,0.07);
 }
 
 * { box-sizing: border-box; }
-body { background: var(--bg); color: #e8e6f0; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: #e8e6f0;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── 스크롤바 ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,106,247,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124,106,247,0.55); }
+
+/* ─── 키프레임 ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 8px 32px rgba(124,106,247,0.35); }
+  50%       { box-shadow: 0 8px 48px rgba(124,106,247,0.65), 0 0 60px rgba(124,106,247,0.2); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes orb {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -20px) scale(1.08); }
+  66%  { transform: translate(-20px, 15px) scale(0.96); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes progressShimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── 유틸리티 클래스 ─── */
+.animate-fade-in-up  { animation: fadeInUp 0.55s ease both; }
+.animate-fade-in     { animation: fadeIn 0.45s ease both; }
+.animate-scale-in    { animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+.animate-slide-left  { animation: slideInLeft 0.4s ease both; }
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-150 { animation-delay: 0.15s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-250 { animation-delay: 0.25s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-350 { animation-delay: 0.35s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* ─── 카드 호버 글로우 ─── */
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(124,106,247,0.15);
+  border-color: rgba(124,106,247,0.35) !important;
+}
+
+/* ─── 버튼 호버 ─── */
+.btn-primary {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.025);
+  filter: brightness(1.1);
+  box-shadow: 0 12px 48px rgba(124,106,247,0.55) !important;
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-secondary {
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #e8e6f0 !important;
+  transform: translateY(-1px);
+}
+
+/* ─── 진행바 shimmer ─── */
+.progress-bar-fill {
+  background-size: 200% 100%;
+  background-image: linear-gradient(90deg,
+    #7c6af7 0%,
+    #22d3a0 40%,
+    #a78bfa 60%,
+    #22d3a0 80%,
+    #7c6af7 100%
+  );
+  animation: progressShimmer 2.5s linear infinite;
+}
+
+/* ─── 입력 필드 포커스 ─── */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(124,106,247,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,247,0.12);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ─── 스텝 트랜지션 래퍼 ─── */
+.step-enter {
+  animation: fadeInUp 0.4s ease both;
+}

@@ -7,56 +7,86 @@ export default function StepHeader({ currentStep, onPrev, onReset, inquiryId }) 
   const pct = current ? Math.round((current.step / total) * 100) : 0;
 
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between mb-3">
+    <div className="animate-fade-in mb-7">
+      <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={onPrev}
           disabled={currentStep <= 1}
-          className="text-[0.85rem] font-semibold transition-opacity duration-150"
+          className="btn-secondary flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg"
           style={{
-            color: currentStep <= 1 ? '#333' : '#a09eb8',
-            background: 'none',
-            border: 'none',
+            color: currentStep <= 1 ? '#2a2a38' : '#a09eb8',
+            background: currentStep <= 1 ? 'transparent' : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${currentStep <= 1 ? 'transparent' : 'rgba(255,255,255,0.07)'}`,
             cursor: currentStep <= 1 ? 'not-allowed' : 'pointer',
-            padding: 0,
           }}
         >
-          ← 이전 단계
+          ← 이전
         </button>
-        <div className="text-[0.78rem] text-[#6b6a80]">
-          {current ? `STEP ${current.step} / ${total}` : ''}
-          {inquiryId && <span className="ml-2 text-[#444]">#{inquiryId}</span>}
+
+        <div className="text-center">
+          <div className="text-[0.72rem] text-[#6b6a80] font-medium tracking-wide uppercase">
+            {current ? `STEP ${current.step} / ${total}` : ''}
+          </div>
+          {current && (
+            <div className="text-[#a78bfa] text-[0.88rem] font-semibold mt-0.5">
+              {current.label}
+            </div>
+          )}
         </div>
+
         <button
           type="button"
           onClick={onReset}
-          className="text-[0.78rem] text-[#555] hover:text-[#f87171] transition-colors duration-150"
+          className="text-[0.78rem] text-[#555] hover:text-[#f87171] transition-colors duration-200 px-3 py-1.5 rounded-lg hover:bg-red-500/10"
           style={{ background: 'none', border: 'none', cursor: 'pointer' }}
         >
           처음부터
         </button>
       </div>
-      <div className="h-[6px] bg-white/[0.06] rounded overflow-hidden">
+
+      {/* 진행바 */}
+      <div
+        className="h-[7px] rounded-full overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.05)' }}
+      >
         <div
-          className="h-full rounded transition-all duration-500"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c6af7,#22d3a0)' }}
+          className="h-full rounded-full progress-bar-fill transition-all duration-700 ease-out"
+          style={{ width: `${pct}%` }}
         />
       </div>
+
+      {/* 스텝 도트 */}
       {current && (
-        <div className="flex items-center gap-1 mt-2 flex-wrap">
-          {STEP_LABELS.map((s) => (
-            <span
-              key={s.step}
-              className="text-[0.72rem] px-2 py-0.5 rounded"
-              style={{
-                background: s.step === current.step ? 'rgba(124,106,247,0.15)' : 'transparent',
-                color: s.step < current.step ? '#22d3a0' : s.step === current.step ? '#a78bfa' : '#444',
-              }}
-            >
-              {s.step < current.step ? '✓' : s.step}. {s.label}
-            </span>
-          ))}
+        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+          {STEP_LABELS.map((s) => {
+            const done = s.step < current.step;
+            const active = s.step === current.step;
+            return (
+              <span
+                key={s.step}
+                className="flex items-center gap-1 text-[0.71rem] px-2 py-0.5 rounded-full transition-all duration-300"
+                style={{
+                  background: active
+                    ? 'rgba(124,106,247,0.18)'
+                    : done
+                    ? 'rgba(34,211,160,0.1)'
+                    : 'transparent',
+                  color: active ? '#a78bfa' : done ? '#22d3a0' : '#3a3a50',
+                  fontWeight: active ? 600 : 400,
+                  border: active ? '1px solid rgba(124,106,247,0.25)' : '1px solid transparent',
+                }}
+              >
+                {done ? '✓' : s.step}. {s.label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {inquiryId && (
+        <div className="text-[0.7rem] text-[#333] mt-1.5">
+          #{inquiryId}
         </div>
       )}
     </div>
