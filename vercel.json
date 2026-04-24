@@ -2,16 +2,5 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm install",
-  "framework": "nextjs",
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/",
-      "framework": "nextjs"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/_/backend"
-    }
-  }
+  "framework": "nextjs"
 }
