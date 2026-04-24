@@ -3,7 +3,7 @@ import asyncio
 import json
 import logging
 import os
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 import anthropic
 from dotenv import load_dotenv
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 from agents.estimator import run_estimator
 from agents.pricer import run_pricer
 from agents.reporter import run_reporter, run_reporter_excel
-from agents.scanner import run_scanner
+from agents.scanner import run_scanner, run_scanner_multi
 from agents.validator import run_validator
 
 app = FastAPI(title="JH EstimateAI API", version="0.2.0")
@@ -54,7 +54,11 @@ class EstimateRequest(BaseModel):
     description: str
     area: float = Field(gt=0)
     type: Literal["인테리어", "신축", "리모델링"]
-    image_base64: Optional[str] = None   # Wave 4 SCANNER
+    image_base64: Optional[str] = None      # 하위 호환 — 단일 이미지 (레거시)
+    # 다중 업로드 (Wave 5)
+    images_base64: List[str] = []           # 현장사진 배열
+    drawings_base64: List[str] = []         # 도면 이미지 배열 (이미지만, PDF 제외)
+    sketches_base64: List[str] = []         # 스케치 배열
     # v2 고도화 — 리포트/상담 연계용 optional 메타 (파이프라인 로직에는 영향 없음)
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
@@ -141,8 +145,14 @@ async def estimate(req: EstimateRequest):
 
     # ── 순차: Agent 1 → 2 → 3 → 4 (데이터 의존성) ──────
     scanner_context = ""
-    if req.image_base64:
-        scanner_context = await run_scanner(req.image_base64)
+    _has_images = req.image_base64 or req.images_base64 or req.drawings_base64 or req.sketches_base64
+    if _has_images:
+        scanner_context = await run_scanner_multi(
+            legacy_base64=req.image_base64 or "",
+            photos=req.images_base64,
+            drawings=req.drawings_base64,
+            sketches=req.sketches_base64,
+        )
 
     estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
     work_items: list[dict] = estimator_out.get("work_items", [])
@@ -226,8 +236,14 @@ async def estimate_stream(req: EstimateRequest):
             # ── 순차: Agent 1 SCANNER ──────────────────────
             yield f"data: {json.dumps({'event': 'agent_start', 'agent': 'SCANNER', 'step': 0})}\n\n"
             scanner_context = ""
-            if req.image_base64:
-                scanner_context = await run_scanner(req.image_base64)
+            _has_images = req.image_base64 or req.images_base64 or req.drawings_base64 or req.sketches_base64
+            if _has_images:
+                scanner_context = await run_scanner_multi(
+                    legacy_base64=req.image_base64 or "",
+                    photos=req.images_base64,
+                    drawings=req.drawings_base64,
+                    sketches=req.sketches_base64,
+                )
             yield f"data: {json.dumps({'event': 'agent_done', 'agent': 'SCANNER', 'step': 0, 'data': {'scanner_context': scanner_context}})}\n\n"
 
             # ── 순차: Agent 2 ESTIMATOR ────────────────────
@@ -316,8 +332,14 @@ async def estimate_compare(req: EstimateRequest):
 
     # ── 순차: SCANNER + ESTIMATOR (공통, 한 번만) ─────────
     scanner_context = ""
-    if req.image_base64:
-        scanner_context = await run_scanner(req.image_base64)
+    _has_images = req.image_base64 or req.images_base64 or req.drawings_base64 or req.sketches_base64
+    if _has_images:
+        scanner_context = await run_scanner_multi(
+            legacy_base64=req.image_base64 or "",
+            photos=req.images_base64,
+            drawings=req.drawings_base64,
+            sketches=req.sketches_base64,
+        )
 
     estimator_out = await run_estimator(req.type, req.area, req.description, scanner_context)
     work_items: list[dict] = estimator_out.get("work_items", [])
@@ -421,10 +443,12 @@ _INQUIRY_LOG_PATH = os.path.join(os.path.dirname(__file__), "data", "inquiries.j
 
 @app.get("/api/inquiries")
 async def list_inquiries(token: Optional[str] = None, limit: int = 50):
-    """관리자 상담 목록 조회 — 환경변수 ADMIN_TOKEN 일치 시 허용. 미설정 시 토큰 불필요(개발 환경)."""
+    """관리자 상담 목록 조회 — 환경변수 ADMIN_TOKEN 필수. 미설정 시 403 반환."""
     from fastapi import HTTPException
     admin_token = os.getenv("ADMIN_TOKEN", "")
-    if admin_token and token != admin_token:
+    if not admin_token:
+        raise HTTPException(status_code=403, detail="ADMIN_TOKEN not configured")
+    if token != admin_token:
         raise HTTPException(status_code=401, detail="관리자 토큰이 올바르지 않습니다.")
 
     records: list[dict] = []

@@ -83,8 +83,9 @@ export function createInitialState() {
       priorityZone: '',
     },
     uploads: {
-      photos: [],
-      drawings: [],
+      photos: [],    // 현장사진 (JPG/PNG/WEBP)
+      drawings: [],  // 도면/PDF (PDF/JPG/PNG)
+      sketches: [],  // 손그림/스케치 (JPG/PNG)
     },
     additionalRequests: '',
     result: null,       // enriched result
@@ -124,7 +125,7 @@ export function estimateReducer(state, action) {
         finish: { ...base.finish, ...(d.finish || {}) },
         schedule: { ...base.schedule, ...(d.schedule || {}) },
         // uploads base64는 draft에 저장되지 않음 — 빈 배열로 리셋
-        uploads: { photos: [], drawings: [] },
+        uploads: { photos: [], drawings: [], sketches: [] },
         additionalRequests: d.additionalRequests || '',
       };
     }
@@ -181,17 +182,19 @@ export function estimateReducer(state, action) {
     }
 
     case 'ADD_UPLOAD': {
-      const { kind, file } = action; // kind: 'photos' | 'drawings'
+      const { kind, file } = action; // kind: 'photos' | 'drawings' | 'sketches'
+      const bucket = state.uploads[kind] || [];
       return {
         ...state,
-        uploads: { ...state.uploads, [kind]: [...state.uploads[kind], file] },
+        uploads: { ...state.uploads, [kind]: [...bucket, file] },
       };
     }
     case 'REMOVE_UPLOAD': {
       const { kind, index } = action;
+      const bucket = state.uploads[kind] || [];
       return {
         ...state,
-        uploads: { ...state.uploads, [kind]: state.uploads[kind].filter((_, i) => i !== index) },
+        uploads: { ...state.uploads, [kind]: bucket.filter((_, i) => i !== index) },
       };
     }
 

@@ -64,12 +64,35 @@ export function validateStep(step, form) {
   return { ok: msgs.length === 0, messages: msgs };
 }
 
-/** 업로드 파일 타입/크기 검증 */
-export function validateUpload(file) {
+/** 업로드 파일 타입/크기 검증
+ * kind: 'photos' | 'drawings' | 'sketches'
+ */
+export function validateUpload(file, kind = 'photos') {
   if (!file) return { ok: false, reason: '파일이 없습니다.' };
-  const MAX = 10 * 1024 * 1024; // 10MB
-  if (file.size > MAX) return { ok: false, reason: '파일 크기는 10MB 이하여야 합니다.' };
-  const okTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-  if (!okTypes.includes(file.type)) return { ok: false, reason: '지원: JPG/PNG/WEBP/PDF' };
-  return { ok: true };
+
+  const isPdf = file.type === 'application/pdf';
+  const isImage = file.type.startsWith('image/');
+
+  // PDF는 도면(drawings)에서만 허용, 최대 20MB
+  if (isPdf) {
+    if (kind !== 'drawings') {
+      return { ok: false, reason: 'PDF는 도면 업로드에만 사용할 수 있습니다.' };
+    }
+    const MAX_PDF = 20 * 1024 * 1024;
+    if (file.size > MAX_PDF) return { ok: false, reason: 'PDF는 20MB 이하여야 합니다.' };
+    return { ok: true };
+  }
+
+  // 이미지: JPG/PNG/WEBP, 최대 10MB
+  if (isImage) {
+    const okImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!okImageTypes.includes(file.type)) {
+      return { ok: false, reason: '이미지는 JPG/PNG/WEBP만 지원합니다.' };
+    }
+    const MAX_IMG = 10 * 1024 * 1024;
+    if (file.size > MAX_IMG) return { ok: false, reason: '이미지는 10MB 이하여야 합니다.' };
+    return { ok: true };
+  }
+
+  return { ok: false, reason: '지원 형식: JPG/PNG/WEBP (사진·스케치), PDF (도면)' };
 }

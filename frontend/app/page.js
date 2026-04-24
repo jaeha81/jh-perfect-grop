@@ -92,13 +92,20 @@ export default function Home() {
 
     const backendType = mapSpaceTypeToBackend(state.space.spaceType);
     const description = buildBackendDescription(state);
-    const firstPhoto = state.uploads.photos[0];
+
+    // 다중 업로드 배열 — base64가 있는 파일만 포함 (PDF는 제외)
+    const imagesBase64   = state.uploads.photos.filter((f) => f.base64).map((f) => f.base64);
+    const drawingsBase64 = state.uploads.drawings.filter((f) => f.base64).map((f) => f.base64);
+    const sketchesBase64 = state.uploads.sketches.filter((f) => f.base64).map((f) => f.base64);
 
     const body = {
       type: backendType,
       area: parseFloat(state.space.totalArea),
       description,
-      ...(firstPhoto ? { image_base64: firstPhoto.base64 } : {}),
+      // 다중 업로드 배열
+      images_base64:   imagesBase64,
+      drawings_base64: drawingsBase64,
+      sketches_base64: sketchesBase64,
       // v2 optional 메타 — 백엔드가 수용하지 않아도 무해
       customer_name: state.customer.customerName || null,
       customer_phone: state.customer.phone || null,
