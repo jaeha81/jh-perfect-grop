@@ -481,14 +481,45 @@ async def create_inquiry(req: InquiryRequest):
 
     inquiry_id = req.inquiry_id or f"INQ-{_dt.now().strftime('%y%m%d')}-{_dt.now().microsecond % 1000:03d}"
     received_at = _dt.now().isoformat(timespec="seconds")
+
+    # 개인정보 보호법 제29조 — 안전조치 의무: 저장 전 개인정보 마스킹
+    def _mask_name(v: str | None) -> str | None:
+        """이름 → 이니셜만 보존 (예: 홍길동 → 홍**)"""
+        if not v:
+            return None
+        return v[0] + "*" * (len(v) - 1)
+
+    def _mask_phone(v: str | None) -> str | None:
+        """전화번호 → 뒤 4자리만 보존 (예: 010-1234-5678 → ***-****-5678)"""
+        if not v:
+            return None
+        digits_only = v.replace("-", "").replace(" ", "")
+        if len(digits_only) >= 4:
+            return "***-****-" + digits_only[-4:]
+        return "***-****-****"
+
+    def _mask_email(v: str | None) -> str | None:
+        """이메일 → 도메인만 보존 (예: user@gmail.com → ***@gmail.com)"""
+        if not v or "@" not in v:
+            return None
+        _, domain = v.split("@", 1)
+        return f"***@{domain}"
+
+    def _mask_address(v: str | None) -> str | None:
+        """주소 → 시·구 단위까지만 보존"""
+        if not v:
+            return None
+        parts = v.split()
+        return " ".join(parts[:2]) + " ***" if len(parts) >= 2 else "***"
+
     record = {
         "inquiry_id": inquiry_id,
         "kind": req.kind,
         "received_at": received_at,
-        "customer_name": req.customer_name,
-        "customer_phone": req.customer_phone,
-        "email": req.email,
-        "address": req.address,
+        "customer_name": _mask_name(req.customer_name),
+        "customer_phone": _mask_phone(req.customer_phone),
+        "email": _mask_email(req.email),
+        "address": _mask_address(req.address),
         "space_type": req.space_type,
         "area": req.area,
         "note": req.note,
